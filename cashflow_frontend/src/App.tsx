@@ -2,12 +2,11 @@ import './index.css'
 
 function App() {
   return (
-    <div className="bg-black text-white h-screen flex items-center justify-center">
-      <h1 className="text-4xl font-bold text-green-400">
-        Tailwind is Working 🚀
-      </h1>
-    </div>
-  );
+    <>
+      <h1 className="text-4xl font-bold text-blue-500">CASHFLOW ANALYZER</h1>
+      <p className="text-lg text-gray-700">Test Tailwind classes</p>
+    </>
+  )
 }
 
 export default App;
