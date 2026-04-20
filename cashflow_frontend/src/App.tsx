@@ -1,12 +1,18 @@
-import './index.css'
+// src/App.tsx
+import Sidebar from './components/Sidebar'
 
-function App() {
+export default function App() {
   return (
-    <>
-      <h1 className="text-4xl font-bold text-blue-500">CASHFLOW ANALYZER</h1>
-      <p className="text-lg text-gray-700">Test Tailwind classes</p>
-    </>
+    <div className="flex h-screen bg-stone-100">
+
+      <Sidebar />
+
+      {/* Main content area — placeholder for now */}
+      <main className="flex-1 p-6">
+        <h1 className="text-xl font-bold text-neutral-800">Dashboard</h1>
+        <p className="text-sm text-neutral-400 mt-1">Good morning, Amina</p>
+      </main>
+
+    </div>
   )
 }
-
-export default App;
