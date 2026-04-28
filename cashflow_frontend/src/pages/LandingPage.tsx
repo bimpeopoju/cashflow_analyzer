@@ -18,10 +18,10 @@ export default function LandingPage() {
             <span className="font-bold text-lg">MarketFlow</span>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => navigate('/login')}>
+            <Button variant="ghost" onClick={() => navigate('/auth')}>
               Login
             </Button>
-            <Button onClick={() => navigate('/register')}>
+            <Button onClick={() => navigate('/auth')}>
               Get Started
             </Button>
           </div>
@@ -38,7 +38,7 @@ export default function LandingPage() {
           Track daily sales, manage expenses, separate capital from profit, and stay compliant with FIRS tax regulations — all in one simple app.
         </p>
         <div className="flex gap-4 justify-center">
-          <Button size="lg" onClick={() => navigate('/register')}>
+          <Button size="lg" onClick={() => navigate('/auth')}>
             Start Free Trial
           </Button>
           <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
