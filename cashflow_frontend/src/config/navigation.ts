@@ -6,13 +6,14 @@ import {
   Receipt, 
   FileText,
   Package,
-  User
+  User,
+  type LucideIcon,
 } from 'lucide-react'
 
 export interface NavItem {
   label: string
   href: string
-  icon: any
+  icon: LucideIcon
 }
 
 export const navItems: NavItem[] = [
