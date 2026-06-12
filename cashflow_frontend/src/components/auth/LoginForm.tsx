@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { api, getErrorMessage } from '@/lib/api'
 
 // Define the shape of our form data using Zod
 const loginSchema = z.object({
@@ -38,17 +39,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     setError(null)
 
     try {
-      // TODO: Replace with actual API call to Django backend
-      // const response = await axios.post('/api/auth/login', data)
-      // localStorage.setItem('token', response.data.token)
-      
-      // Mock successful login for now
-      console.log('Login data:', data)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API delay
-      
+      await api.login(data)
       if (onSuccess) onSuccess()
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.')
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Login failed. Please try again.'))
     } finally {
       setIsLoading(false)
     }

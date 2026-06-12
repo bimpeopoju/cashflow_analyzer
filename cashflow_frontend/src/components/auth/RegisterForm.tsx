@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { api, getErrorMessage } from '@/lib/api'
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -41,19 +42,14 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     setError(null)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await axios.post('/api/auth/register', {
-      //   full_name: data.fullName,
-      //   email: data.email,
-      //   password: data.password,
-      // })
-      
-      console.log('Register data:', data)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await api.register({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+      })
       if (onSuccess) onSuccess()
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.')
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'))
     } finally {
       setIsLoading(false)
     }
