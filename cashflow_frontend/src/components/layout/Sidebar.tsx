@@ -48,8 +48,8 @@ export default function Sidebar() {
             AM
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white/80 text-xs font-medium truncate">Amina Musa</p>
-            <p className="text-white/30 text-xs truncate">Pepper Stall</p>
+            <p className="text-white/80 text-xs font-medium truncate">MarketFlow</p>
+            <p className="text-white/30 text-xs truncate">Trader workspace</p>
           </div>
         </div>
       </div>
