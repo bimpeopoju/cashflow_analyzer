@@ -1,4 +1,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const ACCESS_TOKEN_KEY = 'marketflow.accessToken'
+const REFRESH_TOKEN_KEY = 'marketflow.refreshToken'
 
 export interface User {
   id: number
@@ -75,21 +77,86 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+interface TokenPair {
+  access: string
+  refresh: string
+}
+
+interface AuthResponse {
+  user: User
+  tokens: TokenPair
+}
+
+function readTokens(): TokenPair | null {
+  const access = localStorage.getItem(ACCESS_TOKEN_KEY)
+  const refresh = localStorage.getItem(REFRESH_TOKEN_KEY)
+  return access && refresh ? { access, refresh } : null
+}
+
+function storeTokens(tokens: TokenPair) {
+  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access)
+  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
+}
+
+function clearTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
+}
+
+function apiErrorMessage(body: unknown) {
+  if (!body || typeof body !== 'object') return 'Request failed. Please try again.'
+  const record = body as Record<string, unknown>
+  if (typeof record.message === 'string') return record.message
+  if (typeof record.detail === 'string') return record.detail
+
+  const firstFieldError = Object.values(record).find(Array.isArray)
+  if (Array.isArray(firstFieldError) && typeof firstFieldError[0] === 'string') {
+    return firstFieldError[0]
+  }
+  return 'Request failed. Please try again.'
+}
+
+async function refreshTokens() {
+  const current = readTokens()
+  if (!current) return null
+
+  const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh: current.refresh }),
+  })
+  if (!response.ok) {
+    clearTokens()
+    return null
+  }
+
+  const tokens = await response.json() as TokenPair
+  storeTokens(tokens)
+  return tokens
+}
+
+async function request<T>(path: string, options: RequestInit = {}, canRetry = true): Promise<T> {
+  const tokens = readTokens()
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(tokens ? { Authorization: `Bearer ${tokens.access}` } : {}),
       ...options.headers,
     },
-    ...options,
   })
+
+  if (response.status === 401 && canRetry && tokens) {
+    const refreshed = await refreshTokens()
+    if (refreshed) return request<T>(path, options, false)
+  }
 
   const contentType = response.headers.get('content-type')
   const body = contentType?.includes('application/json') ? await response.json() : {}
 
   if (!response.ok) {
-    throw new ApiError(body.message ?? 'Request failed. Please try again.', response.status)
+    throw new ApiError(apiErrorMessage(body), response.status)
   }
 
   return body as T
@@ -103,17 +170,33 @@ export function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export const api = {
-  register: (payload: { fullName: string; email: string; password: string }) =>
-    request<{ user: User }>('/auth/register/', {
+  register: async (payload: { fullName: string; email: string; password: string }) => {
+    const response = await request<AuthResponse>('/auth/register/', {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
-  login: (payload: { email: string; password: string }) =>
-    request<{ user: User }>('/auth/login/', {
+    })
+    storeTokens(response.tokens)
+    return response
+  },
+  login: async (payload: { email: string; password: string }) => {
+    const response = await request<AuthResponse>('/auth/login/', {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
-  logout: () => request<{ message: string }>('/auth/logout/', { method: 'POST' }),
+    })
+    storeTokens(response.tokens)
+    return response
+  },
+  logout: async () => {
+    const refresh = readTokens()?.refresh
+    try {
+      return await request<{ message: string }>('/auth/logout/', {
+        method: 'POST',
+        body: JSON.stringify(refresh ? { refresh } : {}),
+      })
+    } finally {
+      clearTokens()
+    }
+  },
   me: () => request<{ user: User }>('/auth/me/'),
   dashboard: () => request<DashboardData>('/dashboard/'),
   sales: () => request<{ sales: Sale[] }>('/sales/'),
