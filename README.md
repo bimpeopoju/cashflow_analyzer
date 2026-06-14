@@ -2,6 +2,12 @@
 
 MarketFlow is a cash-flow tracker for Nigerian market traders. The repo contains a Django backend API and a React/Vite frontend.
 
+## Project Documentation
+
+- [Project knowledge base](docs/PROJECT_KNOWLEDGE_BASE.md)
+- [Backend reconstruction blueprint](docs/BACKEND_RECONSTRUCTION_BLUEPRINT.md)
+- [Authentication implementation plan](docs/AUTHENTICATION_IMPLEMENTATION_PLAN.md)
+
 ## Backend
 
 ```bash
