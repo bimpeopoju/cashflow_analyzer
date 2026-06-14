@@ -1,0 +1,13 @@
+{
+  "include": [
+    "backend"
+  ],
+  "exclude": [
+    "backend/**/migrations",
+    "backend/.venv"
+  ],
+  "extraPaths": [
+    "backend"
+  ],
+  "typeCheckingMode": "basic"
+}
