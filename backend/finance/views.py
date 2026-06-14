@@ -2,17 +2,15 @@ import json
 from datetime import datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 
-from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
+from users.serializers import serialize_user
+
 from .models import BusinessProfile, Expense, InventoryItem, Sale
-
-
-User = get_user_model()
 
 
 def read_json(request):
@@ -61,24 +59,6 @@ def money(value):
     return str((value or Decimal('0.00')).quantize(Decimal('0.01')))
 
 
-def user_payload(user):
-    profile, _ = BusinessProfile.objects.get_or_create(
-        user=user,
-        defaults={
-            'business_name': f"{user.first_name or 'MarketFlow'} Business",
-            'stall_name': 'Market stall',
-        },
-    )
-    return {
-        'id': user.id,
-        'email': user.email,
-        'fullName': user.get_full_name() or user.username,
-        'businessName': profile.business_name,
-        'stallName': profile.stall_name,
-        'initialCapital': money(profile.initial_capital),
-    }
-
-
 def sale_payload(sale):
     return {
         'id': sale.id,
@@ -110,71 +90,6 @@ def inventory_payload(item):
         'unitCost': money(item.unit_cost),
         'stockValue': money(item.unit_cost * item.quantity),
     }
-
-
-@csrf_exempt
-@require_http_methods(['POST'])
-def register_view(request):
-    try:
-        data = read_json(request)
-        full_name = text_from_payload(data, 'fullName', 'Full name')
-        email = text_from_payload(data, 'email', 'Email').lower()
-        password = text_from_payload(data, 'password', 'Password')
-    except ValueError as exc:
-        return JsonResponse({'message': str(exc)}, status=400)
-
-    if User.objects.filter(username=email).exists():
-        return JsonResponse({'message': 'An account with that email already exists.'}, status=400)
-
-    first_name, _, last_name = full_name.partition(' ')
-    user = User.objects.create_user(
-        username=email,
-        email=email,
-        password=password,
-        first_name=first_name,
-        last_name=last_name,
-    )
-    BusinessProfile.objects.create(
-        user=user,
-        business_name=f'{first_name or "MarketFlow"} Business',
-        stall_name='Market stall',
-        initial_capital=Decimal('100000.00'),
-    )
-    login(request, user)
-    return JsonResponse({'user': user_payload(user)}, status=201)
-
-
-@csrf_exempt
-@require_http_methods(['POST'])
-def login_view(request):
-    try:
-        data = read_json(request)
-        email = text_from_payload(data, 'email', 'Email').lower()
-        password = text_from_payload(data, 'password', 'Password')
-    except ValueError as exc:
-        return JsonResponse({'message': str(exc)}, status=400)
-
-    user = authenticate(request, username=email, password=password)
-    if user is None:
-        return JsonResponse({'message': 'Invalid email or password.'}, status=400)
-
-    login(request, user)
-    return JsonResponse({'user': user_payload(user)})
-
-
-@csrf_exempt
-@require_http_methods(['POST'])
-def logout_view(request):
-    logout(request)
-    return JsonResponse({'message': 'Signed out.'})
-
-
-@require_http_methods(['GET'])
-def me_view(request):
-    auth_response = require_user(request)
-    if auth_response:
-        return auth_response
-    return JsonResponse({'user': user_payload(request.user)})
 
 
 @require_http_methods(['GET'])
@@ -241,7 +156,7 @@ def dashboard_view(request):
     top_sale = sales.filter(sold_at__gte=week_start).values('item_name').annotate(total=Sum('amount')).order_by('-total').first()
 
     return JsonResponse({
-        'user': user_payload(request.user),
+        'user': serialize_user(request.user),
         'summary': {
             'salesToday': money(sales_today),
             'expensesToday': money(expenses_today),

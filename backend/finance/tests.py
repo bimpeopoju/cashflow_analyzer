@@ -22,7 +22,7 @@ class FinanceApiTests(TestCase):
         response = self.post_json('/api/auth/register/', {
             'fullName': 'Amina Musa',
             'email': 'amina@example.com',
-            'password': 'secret123',
+            'password': 'Strong-pass-493!',
         })
 
         self.assertEqual(response.status_code, 201)
@@ -40,7 +40,7 @@ class FinanceApiTests(TestCase):
             'password': 'wrong-password',
         })
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
 
     def test_dashboard_summarizes_user_owned_records(self):
         user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
