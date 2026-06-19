@@ -6,6 +6,8 @@
     "backend/**/migrations",
     "backend/.venv"
   ],
+  "venvPath": "backend",
+  "venv": ".venv",
   "extraPaths": [
     "backend"
   ],
