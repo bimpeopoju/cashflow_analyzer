@@ -1,14 +1,24 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const ACCESS_TOKEN_KEY = 'marketflow.accessToken'
 const REFRESH_TOKEN_KEY = 'marketflow.refreshToken'
+const ACTIVE_BUSINESS_KEY = 'marketflow.activeBusinessId'
 
 export interface User {
   id: number
   email: string
   fullName: string
+  activeBusinessId: number
   businessName: string
   stallName: string
   initialCapital: string
+}
+
+export interface Business {
+  id: number
+  name: string
+  stallName: string
+  initialCapital: string
+  role: 'owner' | 'admin' | 'staff' | 'viewer' | null
 }
 
 export interface Sale {
@@ -98,9 +108,18 @@ function storeTokens(tokens: TokenPair) {
   localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
 }
 
+function storeActiveBusinessId(id: number) {
+  localStorage.setItem(ACTIVE_BUSINESS_KEY, String(id))
+}
+
+function readActiveBusinessId() {
+  return localStorage.getItem(ACTIVE_BUSINESS_KEY)
+}
+
 function clearTokens() {
   localStorage.removeItem(ACCESS_TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
+  localStorage.removeItem(ACTIVE_BUSINESS_KEY)
 }
 
 function apiErrorMessage(body: unknown) {
@@ -162,6 +181,20 @@ async function request<T>(path: string, options: RequestInit = {}, canRetry = tr
   return body as T
 }
 
+function businessPath(path: string) {
+  const businessId = readActiveBusinessId()
+  return businessId ? `/businesses/${businessId}${path}` : path
+}
+
+function storeAuthResponse(response: AuthResponse) {
+  storeTokens(response.tokens)
+  storeActiveBusinessId(response.user.activeBusinessId)
+}
+
+function storeUserBusiness(user: User) {
+  storeActiveBusinessId(user.activeBusinessId)
+}
+
 export function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof ApiError || error instanceof Error) {
     return error.message
@@ -175,7 +208,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
-    storeTokens(response.tokens)
+    storeAuthResponse(response)
     return response
   },
   login: async (payload: { email: string; password: string }) => {
@@ -183,7 +216,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
-    storeTokens(response.tokens)
+    storeAuthResponse(response)
     return response
   },
   logout: async () => {
@@ -197,23 +230,33 @@ export const api = {
       clearTokens()
     }
   },
-  me: () => request<{ user: User }>('/auth/me/'),
-  dashboard: () => request<DashboardData>('/dashboard/'),
-  sales: () => request<{ sales: Sale[] }>('/sales/'),
+  me: async () => {
+    const response = await request<{ user: User }>('/auth/me/')
+    storeUserBusiness(response.user)
+    return response
+  },
+  businesses: () => request<{ businesses: Business[] }>('/businesses/'),
+  createBusiness: (payload: { name: string; stallName?: string; initialCapital: string }) =>
+    request<{ business: Business }>('/businesses/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  dashboard: () => request<DashboardData>(businessPath('/dashboard/')),
+  sales: () => request<{ sales: Sale[] }>(businessPath('/sales/')),
   createSale: (payload: { itemName: string; amount: string; quantity: number; note?: string }) =>
-    request<{ sale: Sale }>('/sales/', {
+    request<{ sale: Sale }>(businessPath('/sales/'), {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  deleteSale: (id: number) => request<{ message: string }>(`/sales/${id}/`, { method: 'DELETE' }),
-  expenses: () => request<{ expenses: Expense[] }>('/expenses/'),
+  deleteSale: (id: number) => request<{ message: string }>(businessPath(`/sales/${id}/`), { method: 'DELETE' }),
+  expenses: () => request<{ expenses: Expense[] }>(businessPath('/expenses/')),
   createExpense: (payload: { category: string; amount: string; note?: string }) =>
-    request<{ expense: Expense }>('/expenses/', {
+    request<{ expense: Expense }>(businessPath('/expenses/'), {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  deleteExpense: (id: number) => request<{ message: string }>(`/expenses/${id}/`, { method: 'DELETE' }),
-  inventory: () => request<{ items: InventoryItem[] }>('/inventory/'),
+  deleteExpense: (id: number) => request<{ message: string }>(businessPath(`/expenses/${id}/`), { method: 'DELETE' }),
+  inventory: () => request<{ items: InventoryItem[] }>(businessPath('/inventory/')),
   createInventoryItem: (payload: {
     name: string
     quantity: number
@@ -221,12 +264,12 @@ export const api = {
     reorderLevel: number
     unitCost: string
   }) =>
-    request<{ item: InventoryItem }>('/inventory/', {
+    request<{ item: InventoryItem }>(businessPath('/inventory/'), {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
   deleteInventoryItem: (id: number) =>
-    request<{ message: string }>(`/inventory/${id}/`, { method: 'DELETE' }),
+    request<{ message: string }>(businessPath(`/inventory/${id}/`), { method: 'DELETE' }),
 }
 
 export function formatNaira(value: string | number) {
