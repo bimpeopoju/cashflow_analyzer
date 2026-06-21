@@ -5,6 +5,8 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
+from finance.models import Business, BusinessMembership
+
 from .models import OAuthIdentity
 
 
@@ -34,6 +36,14 @@ class AuthenticationApiTests(TestCase):
         self.assertIn('access', response.json()['tokens'])
         self.assertIn('refresh', response.json()['tokens'])
         self.assertTrue(User.objects.filter(username='amina@example.com').exists())
+        self.assertTrue(Business.objects.filter(owner__username='amina@example.com').exists())
+        self.assertTrue(
+            BusinessMembership.objects.filter(
+                user__username='amina@example.com',
+                role='owner',
+                status='active',
+            ).exists(),
+        )
 
     def test_register_rejects_duplicate_email(self):
         self.register()

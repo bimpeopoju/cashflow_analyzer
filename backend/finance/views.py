@@ -10,7 +10,14 @@ from django.views.decorators.http import require_http_methods
 
 from users.serializers import serialize_user
 
-from .models import BusinessProfile, Expense, InventoryItem, Sale
+from .models import BusinessMembership, Expense, InventoryItem, Sale
+from .services import (
+    active_memberships_for_user,
+    business_payload,
+    create_business_for_user,
+    get_business_for_user,
+    money,
+)
 
 
 def read_json(request):
@@ -55,10 +62,6 @@ def text_from_payload(data, field, label, required=True):
     return value
 
 
-def money(value):
-    return str((value or Decimal('0.00')).quantize(Decimal('0.01')))
-
-
 def sale_payload(sale):
     return {
         'id': sale.id,
@@ -92,20 +95,59 @@ def inventory_payload(item):
     }
 
 
-@require_http_methods(['GET'])
-def dashboard_view(request):
+def resolve_business_or_response(request, business_id=None):
+    business = get_business_for_user(request.user, business_id)
+    if business is None:
+        return None, JsonResponse({'message': 'Business not found.'}, status=404)
+    return business, None
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def businesses_view(request):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
+
+    if request.method == 'GET':
+        memberships = active_memberships_for_user(request.user)
+        return JsonResponse({
+            'businesses': [
+                business_payload(membership.business, membership.role)
+                for membership in memberships
+            ],
+        })
+
+    try:
+        data = read_json(request)
+        business = create_business_for_user(
+            user=request.user,
+            name=text_from_payload(data, 'name', 'Business name'),
+            stall_name=text_from_payload(data, 'stallName', 'Stall name', required=False) or 'Market stall',
+            initial_capital=decimal_from_payload(data, 'initialCapital'),
+        )
+    except ValueError as exc:
+        return JsonResponse({'message': str(exc)}, status=400)
+    return JsonResponse({'business': business_payload(business, BusinessMembership.ROLE_OWNER)}, status=201)
+
+
+@require_http_methods(['GET'])
+def dashboard_view(request, business_id=None):
+    auth_response = require_user(request)
+    if auth_response:
+        return auth_response
+
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
 
     today = timezone.localdate()
     start = timezone.make_aware(datetime.combine(today, time.min))
     week_start = start - timedelta(days=6)
 
-    sales = Sale.objects.filter(user=request.user)
-    expenses = Expense.objects.filter(user=request.user)
-    inventory = InventoryItem.objects.filter(user=request.user)
-    profile, _ = BusinessProfile.objects.get_or_create(user=request.user)
+    sales = Sale.objects.filter(business=business)
+    expenses = Expense.objects.filter(business=business)
+    inventory = InventoryItem.objects.filter(business=business)
 
     sales_today = sales.filter(sold_at__gte=start).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     expenses_today = expenses.filter(spent_at__gte=start).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
@@ -162,8 +204,8 @@ def dashboard_view(request):
             'expensesToday': money(expenses_today),
             'netProfit': money(net_profit),
             'transactionsToday': sales.filter(sold_at__gte=start).count() + expenses.filter(spent_at__gte=start).count(),
-            'initialCapital': money(profile.initial_capital),
-            'currentCapital': money(profile.initial_capital + net_profit),
+            'initialCapital': money(business.initial_capital),
+            'currentCapital': money(business.initial_capital + net_profit),
             'inventoryValue': money(sum((item.unit_cost * item.quantity for item in inventory), Decimal('0.00'))),
         },
         'recentActivity': recent[:6],
@@ -178,18 +220,22 @@ def dashboard_view(request):
 
 @csrf_exempt
 @require_http_methods(['GET', 'POST'])
-def sales_view(request):
+def sales_view(request, business_id=None):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
 
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
+
     if request.method == 'GET':
-        return JsonResponse({'sales': [sale_payload(sale) for sale in Sale.objects.filter(user=request.user)[:50]]})
+        return JsonResponse({'sales': [sale_payload(sale) for sale in Sale.objects.filter(business=business)[:50]]})
 
     try:
         data = read_json(request)
         sale = Sale.objects.create(
-            user=request.user,
+            business=business,
             item_name=text_from_payload(data, 'itemName', 'Item name'),
             amount=decimal_from_payload(data, 'amount'),
             quantity=int_from_payload(data, 'quantity', 1),
@@ -202,28 +248,35 @@ def sales_view(request):
 
 @csrf_exempt
 @require_http_methods(['DELETE'])
-def sale_detail_view(request, pk):
+def sale_detail_view(request, pk, business_id=None):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
-    Sale.objects.filter(user=request.user, pk=pk).delete()
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
+    Sale.objects.filter(business=business, pk=pk).delete()
     return JsonResponse({'message': 'Sale deleted.'})
 
 
 @csrf_exempt
 @require_http_methods(['GET', 'POST'])
-def expenses_view(request):
+def expenses_view(request, business_id=None):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
 
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
+
     if request.method == 'GET':
-        return JsonResponse({'expenses': [expense_payload(expense) for expense in Expense.objects.filter(user=request.user)[:50]]})
+        return JsonResponse({'expenses': [expense_payload(expense) for expense in Expense.objects.filter(business=business)[:50]]})
 
     try:
         data = read_json(request)
         expense = Expense.objects.create(
-            user=request.user,
+            business=business,
             category=text_from_payload(data, 'category', 'Category'),
             amount=decimal_from_payload(data, 'amount'),
             note=text_from_payload(data, 'note', 'Note', required=False),
@@ -235,28 +288,35 @@ def expenses_view(request):
 
 @csrf_exempt
 @require_http_methods(['DELETE'])
-def expense_detail_view(request, pk):
+def expense_detail_view(request, pk, business_id=None):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
-    Expense.objects.filter(user=request.user, pk=pk).delete()
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
+    Expense.objects.filter(business=business, pk=pk).delete()
     return JsonResponse({'message': 'Expense deleted.'})
 
 
 @csrf_exempt
 @require_http_methods(['GET', 'POST'])
-def inventory_view(request):
+def inventory_view(request, business_id=None):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
 
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
+
     if request.method == 'GET':
-        return JsonResponse({'items': [inventory_payload(item) for item in InventoryItem.objects.filter(user=request.user)[:100]]})
+        return JsonResponse({'items': [inventory_payload(item) for item in InventoryItem.objects.filter(business=business)[:100]]})
 
     try:
         data = read_json(request)
         item = InventoryItem.objects.create(
-            user=request.user,
+            business=business,
             name=text_from_payload(data, 'name', 'Item name'),
             quantity=int_from_payload(data, 'quantity', 0),
             unit=text_from_payload(data, 'unit', 'Unit', required=False) or 'pcs',
@@ -270,9 +330,12 @@ def inventory_view(request):
 
 @csrf_exempt
 @require_http_methods(['DELETE'])
-def inventory_detail_view(request, pk):
+def inventory_detail_view(request, pk, business_id=None):
     auth_response = require_user(request)
     if auth_response:
         return auth_response
-    InventoryItem.objects.filter(user=request.user, pk=pk).delete()
+    business, error_response = resolve_business_or_response(request, business_id)
+    if error_response:
+        return error_response
+    InventoryItem.objects.filter(business=business, pk=pk).delete()
     return JsonResponse({'message': 'Inventory item deleted.'})

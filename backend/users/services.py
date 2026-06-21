@@ -7,7 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.serializers import ValidationError as SerializerValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from finance.models import BusinessProfile
+from finance.services import create_business_for_user
 
 
 User = get_user_model()
@@ -47,9 +47,9 @@ def register_user(*, full_name, email, password):
 
     candidate.set_password(password)
     candidate.save()
-    BusinessProfile.objects.create(
+    create_business_for_user(
         user=candidate,
-        business_name=f'{first_name or "MarketFlow"} Business',
+        name=f'{first_name or "MarketFlow"} Business',
         stall_name='Market stall',
         initial_capital=Decimal('100000.00'),
     )
