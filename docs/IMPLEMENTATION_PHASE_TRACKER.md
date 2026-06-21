@@ -16,7 +16,7 @@ Status: Complete
 
 ## Phase 1: Business Ownership Boundary
 
-Status: Not started
+Status: In progress
 
 - [ ] Add `Business` model.
 - [ ] Add `BusinessMembership` model.
