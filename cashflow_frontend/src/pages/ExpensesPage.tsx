@@ -11,6 +11,8 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const [form, setForm] = useState({ category: '', amount: '', note: '' })
 
   useEffect(() => {
@@ -23,18 +25,31 @@ export default function ExpensesPage() {
   const addExpense = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setIsSaving(true)
     try {
       const response = await api.createExpense(form)
       setExpenses((current) => [response.expense, ...current])
       setForm({ category: '', amount: '', note: '' })
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Could not save expense.'))
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const deleteExpense = async (id: number) => {
-    await api.deleteExpense(id)
-    setExpenses((current) => current.filter((expense) => expense.id !== id))
+    if (!window.confirm('Delete this expense? This cannot be undone.')) return
+
+    setError(null)
+    setDeletingId(id)
+    try {
+      await api.deleteExpense(id)
+      setExpenses((current) => current.filter((expense) => expense.id !== id))
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Could not delete expense.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -58,9 +73,9 @@ export default function ExpensesPage() {
               <Input type="number" min="0" step="0.01" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} required />
             </Field>
             <div className="flex items-end">
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isSaving}>
                 <Plus className="h-4 w-4" />
-                Add
+                {isSaving ? 'Adding...' : 'Add'}
               </Button>
             </div>
           </form>
@@ -87,7 +102,14 @@ export default function ExpensesPage() {
                   <p className="text-xs text-neutral-500">{new Date(expense.createdAt).toLocaleString()}</p>
                 </div>
                 <p className="text-sm font-bold text-red-600">{formatNaira(expense.amount)}</p>
-                <Button type="button" variant="ghost" size="icon" onClick={() => deleteExpense(expense.id)} aria-label="Delete expense">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteExpense(expense.id)}
+                  aria-label="Delete expense"
+                  disabled={deletingId === expense.id}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

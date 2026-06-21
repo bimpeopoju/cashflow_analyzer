@@ -69,7 +69,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         <Input
           id="password"
           type="password"
-          placeholder="••••••••"
+          placeholder="********"
           {...register('password')}
           disabled={isLoading}
         />

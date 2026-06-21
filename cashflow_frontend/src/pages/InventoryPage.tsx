@@ -12,6 +12,8 @@ export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const [form, setForm] = useState({ name: '', quantity: 0, unit: 'pcs', reorderLevel: 5, unitCost: '' })
 
   useEffect(() => {
@@ -24,18 +26,31 @@ export default function InventoryPage() {
   const addItem = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setIsSaving(true)
     try {
       const response = await api.createInventoryItem(form)
       setItems((current) => [...current, response.item])
       setForm({ name: '', quantity: 0, unit: 'pcs', reorderLevel: 5, unitCost: '' })
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Could not save inventory item.'))
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const deleteItem = async (id: number) => {
-    await api.deleteInventoryItem(id)
-    setItems((current) => current.filter((item) => item.id !== id))
+    if (!window.confirm('Delete this inventory item? This cannot be undone.')) return
+
+    setError(null)
+    setDeletingId(id)
+    try {
+      await api.deleteInventoryItem(id)
+      setItems((current) => current.filter((item) => item.id !== id))
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Could not delete inventory item.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -65,9 +80,9 @@ export default function InventoryPage() {
               <Input type="number" min="0" step="0.01" value={form.unitCost} onChange={(event) => setForm({ ...form, unitCost: event.target.value })} required />
             </Field>
             <div className="flex items-end">
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isSaving}>
                 <Plus className="h-4 w-4" />
-                Add
+                {isSaving ? 'Adding...' : 'Add'}
               </Button>
             </div>
           </form>
@@ -94,9 +109,16 @@ export default function InventoryPage() {
                     <p className="truncate text-sm font-semibold text-neutral-900">{item.name}</p>
                     {item.quantity <= item.reorderLevel && <Badge variant="outline" className="text-orange-600">Low</Badge>}
                   </div>
-                  <p className="text-xs text-neutral-500">{item.quantity} {item.unit} · {formatNaira(item.stockValue)} value</p>
+                  <p className="text-xs text-neutral-500">{item.quantity} {item.unit} - {formatNaira(item.stockValue)} value</p>
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => deleteItem(item.id)} aria-label="Delete inventory item">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteItem(item.id)}
+                  aria-label="Delete inventory item"
+                  disabled={deletingId === item.id}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

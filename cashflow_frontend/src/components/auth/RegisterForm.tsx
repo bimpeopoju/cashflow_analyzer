@@ -90,7 +90,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         <Input
           id="password"
           type="password"
-          placeholder="••••••••"
+          placeholder="********"
           {...register('password')}
           disabled={isLoading}
         />
@@ -104,7 +104,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         <Input
           id="confirmPassword"
           type="password"
-          placeholder="••••••••"
+          placeholder="********"
           {...register('confirmPassword')}
           disabled={isLoading}
         />

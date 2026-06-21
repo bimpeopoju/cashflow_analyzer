@@ -11,6 +11,8 @@ export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const [form, setForm] = useState({ itemName: '', amount: '', quantity: 1, note: '' })
 
   useEffect(() => {
@@ -33,18 +35,31 @@ export default function SalesPage() {
   const addSale = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setIsSaving(true)
     try {
       const response = await api.createSale(form)
       setSales((current) => [response.sale, ...current])
       setForm({ itemName: '', amount: '', quantity: 1, note: '' })
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Could not save sale.'))
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const deleteSale = async (id: number) => {
-    await api.deleteSale(id)
-    setSales((current) => current.filter((sale) => sale.id !== id))
+    if (!window.confirm('Delete this sale? This cannot be undone.')) return
+
+    setError(null)
+    setDeletingId(id)
+    try {
+      await api.deleteSale(id)
+      setSales((current) => current.filter((sale) => sale.id !== id))
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Could not delete sale.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -71,9 +86,9 @@ export default function SalesPage() {
               <Input type="number" min="1" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: Number(event.target.value) })} required />
             </Field>
             <div className="flex items-end">
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isSaving}>
                 <Plus className="h-4 w-4" />
-                Add
+                {isSaving ? 'Adding...' : 'Add'}
               </Button>
             </div>
           </form>
@@ -97,10 +112,17 @@ export default function SalesPage() {
               <div key={sale.id} className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-neutral-900">{sale.itemName}</p>
-                  <p className="text-xs text-neutral-500">{sale.quantity} sold · {new Date(sale.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-neutral-500">{sale.quantity} sold - {new Date(sale.createdAt).toLocaleString()}</p>
                 </div>
                 <p className="text-sm font-bold text-green-600">{formatNaira(sale.amount)}</p>
-                <Button type="button" variant="ghost" size="icon" onClick={() => deleteSale(sale.id)} aria-label="Delete sale">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteSale(sale.id)}
+                  aria-label="Delete sale"
+                  disabled={deletingId === sale.id}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
