@@ -5,15 +5,17 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import LoginForm from '@/components/auth/LoginForm'
 import RegisterForm from '@/components/auth/RegisterForm'
+import { useAuth } from '@/lib/auth-context'
 
 type AuthMode = 'login' | 'register'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login')
   const navigate = useNavigate()
+  const { refreshUser } = useAuth()
 
-  const handleSuccess = () => {
-    // After successful login/register, redirect to dashboard
+  const handleSuccess = async () => {
+    await refreshUser()
     navigate('/dashboard')
   }
 

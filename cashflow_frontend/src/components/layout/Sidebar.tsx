@@ -2,9 +2,17 @@
 
 import { useLocation, Link } from 'react-router-dom'
 import { navItems } from '@/config/navigation'
+import { useAuth } from '@/lib/auth-context'
 
 export default function Sidebar() {
   const location = useLocation()
+  const { user } = useAuth()
+  const initials = (user?.fullName ?? 'MarketFlow')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'M'
 
   return (
     <aside className="hidden md:flex w-64 h-screen bg-neutral-900 flex-col border-r border-white/10">
@@ -45,11 +53,11 @@ export default function Sidebar() {
       <div className="px-3 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
           <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
-            AM
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white/80 text-xs font-medium truncate">MarketFlow</p>
-            <p className="text-white/30 text-xs truncate">Trader workspace</p>
+            <p className="text-white/80 text-xs font-medium truncate">{user?.fullName ?? 'MarketFlow'}</p>
+            <p className="text-white/30 text-xs truncate">{user?.businessName ?? 'Trader workspace'}</p>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import PageWrapper from './components/layout/PageWrapper'
+import { AuthProvider, ProtectedRoute } from './lib/auth'
 import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import ExpensesPage from './pages/ExpensesPage'
@@ -17,19 +18,29 @@ function AppShell({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/login" element={<Navigate to="/auth" replace />} />
-        <Route path="/register" element={<Navigate to="/auth" replace />} />
-        <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
-        <Route path="/sales" element={<AppShell><SalesPage /></AppShell>} />
-        <Route path="/expenses" element={<AppShell><ExpensesPage /></AppShell>} />
-        <Route path="/inventory" element={<AppShell><InventoryPage /></AppShell>} />
-        <Route path="/reports" element={<AppShell><ReportsPage /></AppShell>} />
-        <Route path="/profile" element={<AppShell><ProfilePage /></AppShell>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/register" element={<Navigate to="/auth" replace />} />
+          <Route path="/dashboard" element={<ProtectedApp><Dashboard /></ProtectedApp>} />
+          <Route path="/sales" element={<ProtectedApp><SalesPage /></ProtectedApp>} />
+          <Route path="/expenses" element={<ProtectedApp><ExpensesPage /></ProtectedApp>} />
+          <Route path="/inventory" element={<ProtectedApp><InventoryPage /></ProtectedApp>} />
+          <Route path="/reports" element={<ProtectedApp><ReportsPage /></ProtectedApp>} />
+          <Route path="/profile" element={<ProtectedApp><ProfilePage /></ProtectedApp>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
+  )
+}
+
+function ProtectedApp({ children }: { children: ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <AppShell>{children}</AppShell>
+    </ProtectedRoute>
   )
 }

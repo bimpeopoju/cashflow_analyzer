@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/lib/auth-context'
 import { type User, api, formatNaira, getErrorMessage } from '@/lib/api'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const { clearUser } = useAuth()
 
   useEffect(() => {
     api.me()
@@ -17,6 +19,7 @@ export default function ProfilePage() {
 
   const signOut = async () => {
     await api.logout()
+    clearUser()
     navigate('/auth')
   }
 
