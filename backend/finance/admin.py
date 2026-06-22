@@ -4,6 +4,7 @@ from .models import (
     Business,
     BusinessMembership,
     BusinessProfile,
+    CashEntry,
     Expense,
     InventoryItem,
     Sale,
@@ -33,8 +34,8 @@ class BusinessMembershipAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ('business', 'item_name', 'amount', 'quantity', 'sold_at')
-    list_filter = ('sold_at',)
+    list_display = ('business', 'item_name', 'amount', 'amount_paid', 'payment_status', 'quantity', 'sold_at')
+    list_filter = ('payment_status', 'sold_at')
     search_fields = ('business__name', 'item_name')
 
 
@@ -46,8 +47,8 @@ class SaleLineAdmin(admin.ModelAdmin):
 
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ('business', 'category', 'amount', 'spent_at')
-    list_filter = ('spent_at',)
+    list_display = ('business', 'category', 'amount', 'payment_status', 'spent_at')
+    list_filter = ('payment_status', 'spent_at')
     search_fields = ('business__name', 'category')
 
 
@@ -62,3 +63,10 @@ class StockMovementAdmin(admin.ModelAdmin):
     list_display = ('business', 'inventory_item', 'movement_type', 'quantity_change', 'unit_cost', 'created_at')
     list_filter = ('movement_type', 'created_at')
     search_fields = ('business__name', 'inventory_item__name', 'reference_type')
+
+
+@admin.register(CashEntry)
+class CashEntryAdmin(admin.ModelAdmin):
+    list_display = ('business', 'entry_type', 'direction', 'amount', 'occurred_at', 'reference_type', 'reference_id')
+    list_filter = ('entry_type', 'direction', 'occurred_at')
+    search_fields = ('business__name', 'reference_type', 'note')

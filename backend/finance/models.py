@@ -80,9 +80,20 @@ class BusinessMembership(models.Model):
 
 
 class Sale(models.Model):
+    PAYMENT_PAID = 'paid'
+    PAYMENT_PARTIAL = 'partial'
+    PAYMENT_UNPAID = 'unpaid'
+    PAYMENT_STATUS_CHOICES = [
+        (PAYMENT_PAID, 'Paid'),
+        (PAYMENT_PARTIAL, 'Partial'),
+        (PAYMENT_UNPAID, 'Unpaid'),
+    ]
+
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='sales')
     item_name = models.CharField(max_length=120)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_PAID)
     quantity = models.PositiveIntegerField(default=1)
     note = models.CharField(max_length=240, blank=True)
     sold_at = models.DateTimeField(auto_now_add=True)
@@ -119,9 +130,17 @@ class SaleLine(models.Model):
 
 
 class Expense(models.Model):
+    PAYMENT_PAID = 'paid'
+    PAYMENT_UNPAID = 'unpaid'
+    PAYMENT_STATUS_CHOICES = [
+        (PAYMENT_PAID, 'Paid'),
+        (PAYMENT_UNPAID, 'Unpaid'),
+    ]
+
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='expenses')
     category = models.CharField(max_length=120)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_PAID)
     note = models.CharField(max_length=240, blank=True)
     spent_at = models.DateTimeField(auto_now_add=True)
 
@@ -178,3 +197,45 @@ class StockMovement(models.Model):
 
     def __str__(self) -> str:
         return f'{self.inventory_item} {self.quantity_change}'
+
+
+class CashEntry(models.Model):
+    ENTRY_SALE_PAYMENT = 'sale_payment'
+    ENTRY_EXPENSE_PAYMENT = 'expense_payment'
+    ENTRY_INVENTORY_PURCHASE = 'inventory_purchase'
+    ENTRY_OWNER_DEPOSIT = 'owner_deposit'
+    ENTRY_OWNER_WITHDRAWAL = 'owner_withdrawal'
+    ENTRY_TAX_PAYMENT = 'tax_payment'
+    ENTRY_OTHER = 'other'
+    ENTRY_TYPE_CHOICES = [
+        (ENTRY_SALE_PAYMENT, 'Sale payment'),
+        (ENTRY_EXPENSE_PAYMENT, 'Expense payment'),
+        (ENTRY_INVENTORY_PURCHASE, 'Inventory purchase'),
+        (ENTRY_OWNER_DEPOSIT, 'Owner deposit'),
+        (ENTRY_OWNER_WITHDRAWAL, 'Owner withdrawal'),
+        (ENTRY_TAX_PAYMENT, 'Tax payment'),
+        (ENTRY_OTHER, 'Other'),
+    ]
+
+    DIRECTION_INFLOW = 'inflow'
+    DIRECTION_OUTFLOW = 'outflow'
+    DIRECTION_CHOICES = [
+        (DIRECTION_INFLOW, 'Inflow'),
+        (DIRECTION_OUTFLOW, 'Outflow'),
+    ]
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='cash_entries')
+    entry_type = models.CharField(max_length=40, choices=ENTRY_TYPE_CHOICES)
+    direction = models.CharField(max_length=20, choices=DIRECTION_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    occurred_at = models.DateTimeField()
+    reference_type = models.CharField(max_length=40, blank=True)
+    reference_id = models.PositiveIntegerField(null=True, blank=True)
+    note = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-occurred_at', '-id']
+
+    def __str__(self) -> str:
+        return f'{self.direction} {self.amount}'
