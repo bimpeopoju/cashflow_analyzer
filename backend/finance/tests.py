@@ -4,8 +4,11 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from .calculations import dashboard_for_business
 from .models import Business, Expense, InventoryItem, Sale
-from .services import ensure_default_business
+from .selectors import expenses_for_business, inventory_for_business, sales_for_business
+from .serializers import validate_sale_payload
+from .services import create_sale, ensure_default_business
 
 
 User = get_user_model()
@@ -120,3 +123,70 @@ class FinanceApiTests(TestCase):
         response = self.client.get('/api/dashboard/')
 
         self.assertEqual(response.status_code, 401)
+
+
+class FinanceServiceLayerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='amina@example.com',
+            email='amina@example.com',
+            password='secret123',
+        )
+        self.business = ensure_default_business(self.user)
+
+    def test_validate_sale_payload_normalizes_fields(self):
+        payload = validate_sale_payload({
+            'itemName': ' Tomatoes ',
+            'amount': '2500',
+            'quantity': '2',
+            'note': ' morning sales ',
+        })
+
+        self.assertEqual(payload['item_name'], 'Tomatoes')
+        self.assertEqual(payload['amount'], Decimal('2500.00'))
+        self.assertEqual(payload['quantity'], 2)
+        self.assertEqual(payload['note'], 'morning sales')
+
+    def test_validate_sale_payload_rejects_negative_amount(self):
+        with self.assertRaises(ValueError):
+            validate_sale_payload({
+                'itemName': 'Tomatoes',
+                'amount': '-1',
+                'quantity': 1,
+            })
+
+    def test_create_sale_service_scopes_to_business(self):
+        sale = create_sale(
+            business=self.business,
+            payload={
+                'item_name': 'Onions',
+                'amount': Decimal('3500.00'),
+                'quantity': 2,
+                'note': '',
+            },
+        )
+
+        self.assertEqual(sale.business, self.business)
+        self.assertEqual(sales_for_business(self.business).count(), 1)
+
+    def test_dashboard_calculation_uses_supplied_business_querysets(self):
+        Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=3)
+        Expense.objects.create(business=self.business, category='Transport', amount=Decimal('1200.00'))
+        InventoryItem.objects.create(
+            business=self.business,
+            name='Pepper',
+            quantity=2,
+            reorder_level=5,
+            unit_cost=Decimal('1000.00'),
+        )
+
+        dashboard = dashboard_for_business(
+            business=self.business,
+            sales=sales_for_business(self.business),
+            expenses=expenses_for_business(self.business),
+            inventory=inventory_for_business(self.business),
+        )
+
+        self.assertEqual(dashboard['summary']['netProfit'], '3800.00')
+        self.assertEqual(dashboard['summary']['inventoryValue'], '2000.00')
+        self.assertEqual(dashboard['lowStock'][0]['name'], 'Pepper')
