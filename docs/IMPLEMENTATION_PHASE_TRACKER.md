@@ -50,13 +50,13 @@ Status: Complete
 
 ## Phase 4: Cash Flow Versus Profit
 
-Status: In progress
+Status: Complete
 
-- [ ] Add `CashEntry`.
-- [ ] Record sale payments as cash inflows.
-- [ ] Record expense and inventory payments as cash outflows.
-- [ ] Separate cash position from profit in dashboard calculations.
-- [ ] Add outstanding credit/payment status support.
+- [x] Add `CashEntry`.
+- [x] Record sale payments as cash inflows.
+- [x] Record expense and inventory payments as cash outflows.
+- [x] Separate cash position from profit in dashboard calculations.
+- [x] Add outstanding credit/payment status support.
 
 ## Phase 5: Expense Classification And Audit Trail
 
