@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from .models import Business, BusinessMembership, BusinessProfile
+from .models import Expense, InventoryItem, Sale
 
 
 def money(value):
@@ -101,3 +102,27 @@ def get_business_for_user(user, business_id=None):
         .first()
     )
     return membership.business if membership else None
+
+
+def create_sale(*, business, payload):
+    return Sale.objects.create(business=business, **payload)
+
+
+def delete_sale(*, business, pk):
+    return Sale.objects.filter(business=business, pk=pk).delete()[0]
+
+
+def create_expense(*, business, payload):
+    return Expense.objects.create(business=business, **payload)
+
+
+def delete_expense(*, business, pk):
+    return Expense.objects.filter(business=business, pk=pk).delete()[0]
+
+
+def create_inventory_item(*, business, payload):
+    return InventoryItem.objects.create(business=business, **payload)
+
+
+def delete_inventory_item(*, business, pk):
+    return InventoryItem.objects.filter(business=business, pk=pk).delete()[0]
