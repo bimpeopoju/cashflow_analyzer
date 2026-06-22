@@ -28,7 +28,7 @@ Status: Complete
 
 ## Phase 2: Finance Service Layer
 
-Status: Not started
+Status: In progress
 
 - [ ] Add finance serializers.
 - [ ] Add finance selectors for scoped reads.
