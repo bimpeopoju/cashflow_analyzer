@@ -60,13 +60,13 @@ Status: Complete
 
 ## Phase 5: Expense Classification And Audit Trail
 
-Status: In progress
+Status: Complete
 
-- [ ] Add expense type/status fields.
-- [ ] Add created/updated actor fields to financial records.
-- [ ] Replace hard deletes with void/reversal flows.
-- [ ] Add void reasons and timestamps.
-- [ ] Update frontend delete flows to use void actions.
+- [x] Add expense type/status fields.
+- [x] Add created actor fields to financial records.
+- [x] Replace hard deletes with void/reversal flows.
+- [x] Add void reasons and timestamps.
+- [x] Update frontend delete flows to use void actions.
 
 ## Phase 6: Reports And Analytics
 
