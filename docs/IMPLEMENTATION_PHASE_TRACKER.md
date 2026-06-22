@@ -16,15 +16,15 @@ Status: Complete
 
 ## Phase 1: Business Ownership Boundary
 
-Status: In progress
+Status: Complete
 
-- [ ] Add `Business` model.
-- [ ] Add `BusinessMembership` model.
-- [ ] Backfill existing `BusinessProfile` rows into businesses.
-- [ ] Backfill sales, expenses, and inventory items to businesses.
-- [ ] Replace direct user ownership on financial records with business scope.
-- [ ] Add business list/create/detail endpoints.
-- [ ] Update frontend to select an active business.
+- [x] Add `Business` model.
+- [x] Add `BusinessMembership` model.
+- [x] Backfill existing `BusinessProfile` rows into businesses.
+- [x] Backfill sales, expenses, and inventory items to businesses.
+- [x] Replace direct user ownership on financial records with business scope.
+- [x] Add business list/create endpoints.
+- [x] Update frontend to select an active business.
 
 ## Phase 2: Finance Service Layer
 
