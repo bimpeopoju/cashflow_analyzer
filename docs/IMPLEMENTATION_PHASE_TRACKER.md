@@ -60,7 +60,7 @@ Status: Complete
 
 ## Phase 5: Expense Classification And Audit Trail
 
-Status: Not started
+Status: In progress
 
 - [ ] Add expense type/status fields.
 - [ ] Add created/updated actor fields to financial records.
