@@ -38,7 +38,7 @@ export default function ExpensesPage() {
   }
 
   const deleteExpense = async (id: number) => {
-    if (!window.confirm('Delete this expense? This cannot be undone.')) return
+    if (!window.confirm('Void this expense? The record will be kept for audit history.')) return
 
     setError(null)
     setDeletingId(id)
@@ -46,7 +46,7 @@ export default function ExpensesPage() {
       await api.deleteExpense(id)
       setExpenses((current) => current.filter((expense) => expense.id !== id))
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Could not delete expense.'))
+      setError(getErrorMessage(err, 'Could not void expense.'))
     } finally {
       setDeletingId(null)
     }
@@ -107,7 +107,7 @@ export default function ExpensesPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => deleteExpense(expense.id)}
-                  aria-label="Delete expense"
+                  aria-label="Void expense"
                   disabled={deletingId === expense.id}
                 >
                   <Trash2 className="h-4 w-4" />

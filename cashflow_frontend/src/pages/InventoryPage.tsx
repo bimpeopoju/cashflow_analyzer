@@ -39,7 +39,7 @@ export default function InventoryPage() {
   }
 
   const deleteItem = async (id: number) => {
-    if (!window.confirm('Delete this inventory item? This cannot be undone.')) return
+    if (!window.confirm('Void this inventory item? The record will be kept for audit history.')) return
 
     setError(null)
     setDeletingId(id)
@@ -47,7 +47,7 @@ export default function InventoryPage() {
       await api.deleteInventoryItem(id)
       setItems((current) => current.filter((item) => item.id !== id))
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Could not delete inventory item.'))
+      setError(getErrorMessage(err, 'Could not void inventory item.'))
     } finally {
       setDeletingId(null)
     }
@@ -116,7 +116,7 @@ export default function InventoryPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => deleteItem(item.id)}
-                  aria-label="Delete inventory item"
+                  aria-label="Void inventory item"
                   disabled={deletingId === item.id}
                 >
                   <Trash2 className="h-4 w-4" />

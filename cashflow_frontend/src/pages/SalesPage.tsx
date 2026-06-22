@@ -56,7 +56,7 @@ export default function SalesPage() {
   }
 
   const deleteSale = async (id: number) => {
-    if (!window.confirm('Delete this sale? This cannot be undone.')) return
+    if (!window.confirm('Void this sale? The record will be kept for audit history.')) return
 
     setError(null)
     setDeletingId(id)
@@ -64,7 +64,7 @@ export default function SalesPage() {
       await api.deleteSale(id)
       setSales((current) => current.filter((sale) => sale.id !== id))
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Could not delete sale.'))
+      setError(getErrorMessage(err, 'Could not void sale.'))
     } finally {
       setDeletingId(null)
     }
@@ -149,7 +149,7 @@ export default function SalesPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => deleteSale(sale.id)}
-                  aria-label="Delete sale"
+                  aria-label="Void sale"
                   disabled={deletingId === sale.id}
                 >
                   <Trash2 className="h-4 w-4" />
