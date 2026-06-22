@@ -39,19 +39,35 @@ def validate_business_payload(data):
 
 
 def validate_sale_payload(data):
+    amount = decimal_from_payload(data, 'amount')
+    amount_paid = decimal_from_payload(data, 'amountPaid') if 'amountPaid' in data else amount
+    if amount_paid > amount:
+        raise ValueError('amountPaid cannot exceed amount.')
+    if amount_paid == 0:
+        payment_status = 'unpaid'
+    elif amount_paid < amount:
+        payment_status = 'partial'
+    else:
+        payment_status = 'paid'
     return {
         'inventory_item_id': int_from_payload(data, 'inventoryItemId', 0) or None,
         'item_name': text_from_payload(data, 'itemName', 'Item name'),
-        'amount': decimal_from_payload(data, 'amount'),
+        'amount': amount,
+        'amount_paid': amount_paid,
+        'payment_status': payment_status,
         'quantity': int_from_payload(data, 'quantity', 1),
         'note': text_from_payload(data, 'note', 'Note', required=False),
     }
 
 
 def validate_expense_payload(data):
+    payment_status = str(data.get('paymentStatus', 'paid')).strip() or 'paid'
+    if payment_status not in {'paid', 'unpaid'}:
+        raise ValueError('paymentStatus must be paid or unpaid.')
     return {
         'category': text_from_payload(data, 'category', 'Category'),
         'amount': decimal_from_payload(data, 'amount'),
+        'payment_status': payment_status,
         'note': text_from_payload(data, 'note', 'Note', required=False),
     }
 
@@ -73,6 +89,8 @@ def sale_payload(sale):
         'itemName': sale.item_name,
         'inventoryItemId': first_line.inventory_item_id if first_line else None,
         'amount': money(sale.amount),
+        'amountPaid': money(sale.amount_paid),
+        'paymentStatus': sale.payment_status,
         'quantity': sale.quantity,
         'note': sale.note,
         'createdAt': sale.sold_at.isoformat(),
@@ -84,6 +102,7 @@ def expense_payload(expense):
         'id': expense.id,
         'category': expense.category,
         'amount': money(expense.amount),
+        'paymentStatus': expense.payment_status,
         'note': expense.note,
         'createdAt': expense.spent_at.isoformat(),
     }

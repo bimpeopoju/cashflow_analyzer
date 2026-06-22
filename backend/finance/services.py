@@ -1,9 +1,19 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils import timezone
 
-from .models import Business, BusinessMembership, BusinessProfile
-from .models import Expense, InventoryItem, Sale, SaleLine, StockMovement
+from .models import (
+    Business,
+    BusinessMembership,
+    BusinessProfile,
+    CashEntry,
+    Expense,
+    InventoryItem,
+    Sale,
+    SaleLine,
+    StockMovement,
+)
 
 
 def money(value):
@@ -152,6 +162,18 @@ def create_sale(*, business, payload):
             note=f'Sale #{sale.id}',
         )
 
+    if sale.amount_paid > 0:
+        CashEntry.objects.create(
+            business=business,
+            entry_type=CashEntry.ENTRY_SALE_PAYMENT,
+            direction=CashEntry.DIRECTION_INFLOW,
+            amount=sale.amount_paid,
+            occurred_at=sale.sold_at,
+            reference_type='sale',
+            reference_id=sale.id,
+            note=sale.note,
+        )
+
     return sale
 
 
@@ -160,7 +182,19 @@ def delete_sale(*, business, pk):
 
 
 def create_expense(*, business, payload):
-    return Expense.objects.create(business=business, **payload)
+    expense = Expense.objects.create(business=business, **payload)
+    if expense.payment_status == Expense.PAYMENT_PAID and expense.amount > 0:
+        CashEntry.objects.create(
+            business=business,
+            entry_type=CashEntry.ENTRY_EXPENSE_PAYMENT,
+            direction=CashEntry.DIRECTION_OUTFLOW,
+            amount=expense.amount,
+            occurred_at=expense.spent_at,
+            reference_type='expense',
+            reference_id=expense.id,
+            note=expense.note,
+        )
+    return expense
 
 
 def delete_expense(*, business, pk):
@@ -168,7 +202,20 @@ def delete_expense(*, business, pk):
 
 
 def create_inventory_item(*, business, payload):
-    return InventoryItem.objects.create(business=business, **payload)
+    item = InventoryItem.objects.create(business=business, **payload)
+    stock_value = (item.unit_cost * item.quantity).quantize(Decimal('0.01'))
+    if stock_value > 0:
+        CashEntry.objects.create(
+            business=business,
+            entry_type=CashEntry.ENTRY_INVENTORY_PURCHASE,
+            direction=CashEntry.DIRECTION_OUTFLOW,
+            amount=stock_value,
+            occurred_at=timezone.now(),
+            reference_type='inventory_item',
+            reference_id=item.id,
+            note=f'Initial stock for {item.name}',
+        )
+    return item
 
 
 def delete_inventory_item(*, business, pk):
