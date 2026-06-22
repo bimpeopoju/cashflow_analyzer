@@ -10,6 +10,7 @@ from .calculations import dashboard_for_business
 from .models import BusinessMembership
 from .selectors import (
     expenses_for_business,
+    cash_entries_for_business,
     inventory_for_business,
     list_user_businesses,
     sale_lines_for_business,
@@ -98,6 +99,7 @@ def dashboard_view(request, business_id=None):
         expenses=expenses_for_business(business),
         inventory=inventory_for_business(business),
         sale_lines=sale_lines_for_business(business),
+        cash_entries=cash_entries_for_business(business),
     )
     return JsonResponse({'user': serialize_user(request.user), **dashboard})
 

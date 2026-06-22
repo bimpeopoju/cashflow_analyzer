@@ -57,6 +57,10 @@ export interface DashboardData {
     costOfGoodsSold: string
     grossProfit: string
     netProfit: string
+    cashInflow: string
+    cashOutflow: string
+    cashPosition: string
+    outstandingSales: string
     transactionsToday: number
     initialCapital: string
     currentCapital: string

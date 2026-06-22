@@ -106,9 +106,25 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold">{formatNaira(summary.initialCapital)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-neutral-500">Current Capital</span>
-                  <span className="text-sm font-semibold text-green-600">{formatNaira(summary.currentCapital)}</span>
+                  <span className="text-xs text-neutral-500">Cash Position</span>
+                  <span className="text-sm font-semibold text-green-600">{formatNaira(summary.cashPosition)}</span>
                 </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-neutral-500">Cash In</p>
+                  <p className="font-semibold text-green-700">{formatNaira(summary.cashInflow)}</p>
+                </div>
+                <div>
+                  <p className="text-neutral-500">Cash Out</p>
+                  <p className="font-semibold text-red-700">{formatNaira(summary.cashOutflow)}</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-neutral-500">Outstanding Sales</span>
+                <span className="font-semibold">{formatNaira(summary.outstandingSales)}</span>
               </div>
               <Separator />
               <div className="flex items-center gap-2 text-xs text-neutral-600">

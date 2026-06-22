@@ -8,7 +8,7 @@ from .serializers import inventory_payload
 from .services import money
 
 
-def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=None):
+def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=None, cash_entries=None):
     today = timezone.localdate()
     start = timezone.make_aware(datetime.combine(today, time.min))
     week_start = start - timedelta(days=6)
@@ -27,6 +27,15 @@ def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=N
         )
     gross_profit = total_sales - cost_of_goods_sold
     net_profit = gross_profit - total_expenses
+    cash_inflow = Decimal('0.00')
+    cash_outflow = Decimal('0.00')
+    if cash_entries is not None:
+        cash_inflow = cash_entries.filter(direction='inflow').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        cash_outflow = cash_entries.filter(direction='outflow').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    cash_position = business.initial_capital + cash_inflow - cash_outflow
+    outstanding_sales = total_sales - (
+        sales.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+    )
 
     recent = [
         {
@@ -77,9 +86,13 @@ def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=N
             'costOfGoodsSold': money(cost_of_goods_sold),
             'grossProfit': money(gross_profit),
             'netProfit': money(net_profit),
+            'cashInflow': money(cash_inflow),
+            'cashOutflow': money(cash_outflow),
+            'cashPosition': money(cash_position),
+            'outstandingSales': money(outstanding_sales),
             'transactionsToday': sales.filter(sold_at__gte=start).count() + expenses.filter(spent_at__gte=start).count(),
             'initialCapital': money(business.initial_capital),
-            'currentCapital': money(business.initial_capital + net_profit),
+            'currentCapital': money(cash_position),
             'inventoryValue': money(sum((item.unit_cost * item.quantity for item in inventory), Decimal('0.00'))),
         },
         'recentActivity': recent[:6],

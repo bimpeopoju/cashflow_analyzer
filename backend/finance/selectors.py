@@ -1,4 +1,4 @@
-from .models import Expense, InventoryItem, Sale, SaleLine, StockMovement
+from .models import CashEntry, Expense, InventoryItem, Sale, SaleLine, StockMovement
 from .services import active_memberships_for_user, ensure_default_business
 
 
@@ -28,6 +28,10 @@ def sale_lines_for_business(business):
 
 def stock_movements_for_business(business):
     return StockMovement.objects.filter(business=business).select_related('inventory_item')
+
+
+def cash_entries_for_business(business):
+    return CashEntry.objects.filter(business=business)
 
 
 def sale_for_business(*, business, pk):
