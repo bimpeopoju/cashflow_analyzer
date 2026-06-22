@@ -5,10 +5,10 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from .calculations import dashboard_for_business
-from .models import Business, Expense, InventoryItem, Sale, SaleLine, StockMovement
-from .selectors import expenses_for_business, inventory_for_business, sales_for_business
-from .serializers import validate_sale_payload
-from .services import create_sale, ensure_default_business
+from .models import Business, CashEntry, Expense, InventoryItem, Sale, SaleLine, StockMovement
+from .selectors import cash_entries_for_business, expenses_for_business, inventory_for_business, sales_for_business
+from .serializers import validate_expense_payload, validate_sale_payload
+from .services import create_expense, create_inventory_item, create_sale, ensure_default_business
 
 
 User = get_user_model()
@@ -65,6 +65,7 @@ class FinanceApiTests(TestCase):
         self.assertEqual(payload['summary']['salesToday'], '5000.00')
         self.assertEqual(payload['summary']['expensesToday'], '1200.00')
         self.assertEqual(payload['summary']['netProfit'], '3800.00')
+        self.assertIn('cashPosition', payload['summary'])
         self.assertEqual(payload['lowStock'][0]['name'], 'Pepper')
 
     def test_business_scoped_dashboard_rejects_unrelated_business(self):
@@ -144,6 +145,8 @@ class FinanceServiceLayerTests(TestCase):
 
         self.assertEqual(payload['item_name'], 'Tomatoes')
         self.assertEqual(payload['amount'], Decimal('2500.00'))
+        self.assertEqual(payload['amount_paid'], Decimal('2500.00'))
+        self.assertEqual(payload['payment_status'], 'paid')
         self.assertEqual(payload['quantity'], 2)
         self.assertEqual(payload['note'], 'morning sales')
 
@@ -162,6 +165,8 @@ class FinanceServiceLayerTests(TestCase):
                 'inventory_item_id': None,
                 'item_name': 'Onions',
                 'amount': Decimal('3500.00'),
+                'amount_paid': Decimal('3500.00'),
+                'payment_status': 'paid',
                 'quantity': 2,
                 'note': '',
             },
@@ -170,6 +175,30 @@ class FinanceServiceLayerTests(TestCase):
         self.assertEqual(sale.business, self.business)
         self.assertEqual(sales_for_business(self.business).count(), 1)
         self.assertEqual(SaleLine.objects.filter(sale=sale).count(), 1)
+        self.assertEqual(CashEntry.objects.filter(reference_type='sale', reference_id=sale.id).count(), 1)
+
+    def test_validate_sale_payload_supports_partial_payment(self):
+        payload = validate_sale_payload({
+            'itemName': 'Tomatoes',
+            'amount': '5000',
+            'amountPaid': '2000',
+            'quantity': '2',
+        })
+
+        self.assertEqual(payload['amount_paid'], Decimal('2000.00'))
+        self.assertEqual(payload['payment_status'], 'partial')
+
+    def test_unpaid_expense_does_not_create_cash_entry(self):
+        payload = validate_expense_payload({
+            'category': 'Transport',
+            'amount': '1200',
+            'paymentStatus': 'unpaid',
+        })
+
+        expense = create_expense(business=self.business, payload=payload)
+
+        self.assertEqual(expense.payment_status, 'unpaid')
+        self.assertEqual(CashEntry.objects.filter(reference_type='expense', reference_id=expense.id).count(), 0)
 
     def test_create_sale_service_reduces_inventory_and_records_movement(self):
         item = InventoryItem.objects.create(
@@ -185,6 +214,8 @@ class FinanceServiceLayerTests(TestCase):
                 'inventory_item_id': item.id,
                 'item_name': 'Tomatoes',
                 'amount': Decimal('3000.00'),
+                'amount_paid': Decimal('3000.00'),
+                'payment_status': 'paid',
                 'quantity': 3,
                 'note': '',
             },
@@ -214,10 +245,28 @@ class FinanceServiceLayerTests(TestCase):
                     'inventory_item_id': item.id,
                     'item_name': 'Tomatoes',
                     'amount': Decimal('3000.00'),
+                    'amount_paid': Decimal('3000.00'),
+                    'payment_status': 'paid',
                     'quantity': 3,
                     'note': '',
                 },
             )
+
+    def test_create_inventory_item_records_purchase_outflow(self):
+        item = create_inventory_item(
+            business=self.business,
+            payload={
+                'name': 'Pepper',
+                'quantity': 4,
+                'unit': 'basket',
+                'reorder_level': 1,
+                'unit_cost': Decimal('1500.00'),
+            },
+        )
+
+        entry = CashEntry.objects.get(reference_type='inventory_item', reference_id=item.id)
+        self.assertEqual(entry.direction, 'outflow')
+        self.assertEqual(entry.amount, Decimal('6000.00'))
 
     def test_dashboard_calculation_uses_supplied_business_querysets(self):
         Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=3)
@@ -236,10 +285,12 @@ class FinanceServiceLayerTests(TestCase):
             expenses=expenses_for_business(self.business),
             inventory=inventory_for_business(self.business),
             sale_lines=self.business.sales.first().lines.all(),
+            cash_entries=cash_entries_for_business(self.business),
         )
 
         self.assertEqual(dashboard['summary']['costOfGoodsSold'], '0.00')
         self.assertEqual(dashboard['summary']['grossProfit'], '5000.00')
         self.assertEqual(dashboard['summary']['netProfit'], '3800.00')
+        self.assertEqual(dashboard['summary']['cashPosition'], '0.00')
         self.assertEqual(dashboard['summary']['inventoryValue'], '2000.00')
         self.assertEqual(dashboard['lowStock'][0]['name'], 'Pepper')
