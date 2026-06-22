@@ -53,6 +53,8 @@ export interface DashboardData {
   summary: {
     salesToday: string
     expensesToday: string
+    costOfGoodsSold: string
+    grossProfit: string
     netProfit: string
     transactionsToday: number
     initialCapital: string

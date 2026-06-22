@@ -40,6 +40,7 @@ def validate_business_payload(data):
 
 def validate_sale_payload(data):
     return {
+        'inventory_item_id': int_from_payload(data, 'inventoryItemId', 0) or None,
         'item_name': text_from_payload(data, 'itemName', 'Item name'),
         'amount': decimal_from_payload(data, 'amount'),
         'quantity': int_from_payload(data, 'quantity', 1),
@@ -66,9 +67,11 @@ def validate_inventory_payload(data):
 
 
 def sale_payload(sale):
+    first_line = sale.lines.first()
     return {
         'id': sale.id,
         'itemName': sale.item_name,
+        'inventoryItemId': first_line.inventory_item_id if first_line else None,
         'amount': money(sale.amount),
         'quantity': sale.quantity,
         'note': sale.note,

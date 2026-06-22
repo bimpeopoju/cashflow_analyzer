@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from .models import Business, BusinessMembership, BusinessProfile
-from .models import Expense, InventoryItem, Sale
+from .models import Expense, InventoryItem, Sale, SaleLine, StockMovement
 
 
 def money(value):
@@ -104,8 +104,55 @@ def get_business_for_user(user, business_id=None):
     return membership.business if membership else None
 
 
+@transaction.atomic
 def create_sale(*, business, payload):
-    return Sale.objects.create(business=business, **payload)
+    inventory_item_id = payload.pop('inventory_item_id', None)
+    quantity = payload['quantity']
+    amount = payload['amount']
+    unit_price = (amount / quantity).quantize(Decimal('0.01')) if quantity else amount
+    inventory_item = None
+    unit_cost = Decimal('0.00')
+
+    if inventory_item_id:
+        inventory_item = (
+            InventoryItem.objects
+            .select_for_update()
+            .filter(business=business, pk=inventory_item_id)
+            .first()
+        )
+        if inventory_item is None:
+            raise ValueError('Inventory item not found.')
+        if inventory_item.quantity < quantity:
+            raise ValueError('Not enough stock available.')
+        unit_cost = inventory_item.unit_cost
+
+    sale = Sale.objects.create(business=business, **payload)
+    line = SaleLine.objects.create(
+        sale=sale,
+        inventory_item=inventory_item,
+        item_name=sale.item_name,
+        quantity=quantity,
+        unit_price=unit_price,
+        unit_cost=unit_cost,
+        discount_amount=Decimal('0.00'),
+        line_total=amount,
+    )
+
+    if inventory_item is not None:
+        inventory_item.quantity -= quantity
+        inventory_item.save(update_fields=['quantity', 'updated_at'])
+        StockMovement.objects.create(
+            business=business,
+            inventory_item=inventory_item,
+            movement_type=StockMovement.MOVEMENT_SALE,
+            quantity_change=-quantity,
+            unit_cost=unit_cost,
+            reference_type='sale_line',
+            reference_id=line.id,
+            note=f'Sale #{sale.id}',
+        )
+
+    return sale
 
 
 def delete_sale(*, business, pk):

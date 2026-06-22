@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from .calculations import dashboard_for_business
-from .models import Business, Expense, InventoryItem, Sale
+from .models import Business, Expense, InventoryItem, Sale, SaleLine, StockMovement
 from .selectors import expenses_for_business, inventory_for_business, sales_for_business
 from .serializers import validate_sale_payload
 from .services import create_sale, ensure_default_business
@@ -159,6 +159,7 @@ class FinanceServiceLayerTests(TestCase):
         sale = create_sale(
             business=self.business,
             payload={
+                'inventory_item_id': None,
                 'item_name': 'Onions',
                 'amount': Decimal('3500.00'),
                 'quantity': 2,
@@ -168,6 +169,55 @@ class FinanceServiceLayerTests(TestCase):
 
         self.assertEqual(sale.business, self.business)
         self.assertEqual(sales_for_business(self.business).count(), 1)
+        self.assertEqual(SaleLine.objects.filter(sale=sale).count(), 1)
+
+    def test_create_sale_service_reduces_inventory_and_records_movement(self):
+        item = InventoryItem.objects.create(
+            business=self.business,
+            name='Tomatoes',
+            quantity=10,
+            unit_cost=Decimal('800.00'),
+        )
+
+        sale = create_sale(
+            business=self.business,
+            payload={
+                'inventory_item_id': item.id,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('3000.00'),
+                'quantity': 3,
+                'note': '',
+            },
+        )
+
+        item.refresh_from_db()
+        line = sale.lines.get()
+        movement = StockMovement.objects.get(reference_id=line.id)
+        self.assertEqual(item.quantity, 7)
+        self.assertEqual(line.inventory_item, item)
+        self.assertEqual(line.unit_cost, Decimal('800.00'))
+        self.assertEqual(movement.quantity_change, -3)
+        self.assertEqual(movement.movement_type, 'sale')
+
+    def test_create_sale_service_rejects_insufficient_stock(self):
+        item = InventoryItem.objects.create(
+            business=self.business,
+            name='Tomatoes',
+            quantity=1,
+            unit_cost=Decimal('800.00'),
+        )
+
+        with self.assertRaises(ValueError):
+            create_sale(
+                business=self.business,
+                payload={
+                    'inventory_item_id': item.id,
+                    'item_name': 'Tomatoes',
+                    'amount': Decimal('3000.00'),
+                    'quantity': 3,
+                    'note': '',
+                },
+            )
 
     def test_dashboard_calculation_uses_supplied_business_querysets(self):
         Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=3)
@@ -185,8 +235,11 @@ class FinanceServiceLayerTests(TestCase):
             sales=sales_for_business(self.business),
             expenses=expenses_for_business(self.business),
             inventory=inventory_for_business(self.business),
+            sale_lines=self.business.sales.first().lines.all(),
         )
 
+        self.assertEqual(dashboard['summary']['costOfGoodsSold'], '0.00')
+        self.assertEqual(dashboard['summary']['grossProfit'], '5000.00')
         self.assertEqual(dashboard['summary']['netProfit'], '3800.00')
         self.assertEqual(dashboard['summary']['inventoryValue'], '2000.00')
         self.assertEqual(dashboard['lowStock'][0]['name'], 'Pepper')

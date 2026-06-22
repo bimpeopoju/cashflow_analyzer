@@ -1,14 +1,14 @@
 from datetime import datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.utils import timezone
 
 from .serializers import inventory_payload
 from .services import money
 
 
-def dashboard_for_business(*, business, sales, expenses, inventory):
+def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=None):
     today = timezone.localdate()
     start = timezone.make_aware(datetime.combine(today, time.min))
     week_start = start - timedelta(days=6)
@@ -17,7 +17,16 @@ def dashboard_for_business(*, business, sales, expenses, inventory):
     expenses_today = expenses.filter(spent_at__gte=start).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     total_sales = sales.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    net_profit = total_sales - total_expenses
+    cost_of_goods_sold = Decimal('0.00')
+    if sale_lines is not None:
+        cost_of_goods_sold = (
+            sale_lines
+            .annotate(line_cost=F('unit_cost') * F('quantity'))
+            .aggregate(total=Sum('line_cost'))['total']
+            or Decimal('0.00')
+        )
+    gross_profit = total_sales - cost_of_goods_sold
+    net_profit = gross_profit - total_expenses
 
     recent = [
         {
@@ -65,6 +74,8 @@ def dashboard_for_business(*, business, sales, expenses, inventory):
         'summary': {
             'salesToday': money(sales_today),
             'expensesToday': money(expenses_today),
+            'costOfGoodsSold': money(cost_of_goods_sold),
+            'grossProfit': money(gross_profit),
             'netProfit': money(net_profit),
             'transactionsToday': sales.filter(sold_at__gte=start).count() + expenses.filter(spent_at__gte=start).count(),
             'initialCapital': money(business.initial_capital),
