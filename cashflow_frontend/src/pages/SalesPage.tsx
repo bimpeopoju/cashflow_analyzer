@@ -5,21 +5,25 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { type Sale, api, formatNaira, getErrorMessage } from '@/lib/api'
+import { type InventoryItem, type Sale, api, formatNaira, getErrorMessage } from '@/lib/api'
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([])
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [form, setForm] = useState({ itemName: '', amount: '', quantity: 1, note: '' })
+  const [form, setForm] = useState({ inventoryItemId: '', itemName: '', amount: '', quantity: 1, note: '' })
 
   useEffect(() => {
     let isMounted = true
-    api.sales()
-      .then((data) => {
-        if (isMounted) setSales(data.sales)
+    Promise.all([api.sales(), api.inventory()])
+      .then(([salesData, inventoryData]) => {
+        if (isMounted) {
+          setSales(salesData.sales)
+          setInventory(inventoryData.items)
+        }
       })
       .catch((err: unknown) => {
         if (isMounted) setError(getErrorMessage(err, 'Could not load sales.'))
@@ -37,9 +41,13 @@ export default function SalesPage() {
     setError(null)
     setIsSaving(true)
     try {
-      const response = await api.createSale(form)
+      const response = await api.createSale({
+        ...form,
+        inventoryItemId: form.inventoryItemId ? Number(form.inventoryItemId) : null,
+      })
       setSales((current) => [response.sale, ...current])
-      setForm({ itemName: '', amount: '', quantity: 1, note: '' })
+      setForm({ inventoryItemId: '', itemName: '', amount: '', quantity: 1, note: '' })
+      api.inventory().then((data) => setInventory(data.items)).catch(() => undefined)
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Could not save sale.'))
     } finally {
@@ -75,7 +83,28 @@ export default function SalesPage() {
           <CardDescription>Use the item name your stall already uses.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={addSale} className="grid gap-3 md:grid-cols-5">
+          <form onSubmit={addSale} className="grid gap-3 md:grid-cols-6">
+            <Field label="Tracked Stock" className="md:col-span-2">
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={form.inventoryItemId}
+                onChange={(event) => {
+                  const item = inventory.find((candidate) => String(candidate.id) === event.target.value)
+                  setForm({
+                    ...form,
+                    inventoryItemId: event.target.value,
+                    itemName: item?.name ?? form.itemName,
+                  })
+                }}
+              >
+                <option value="">Manual sale</option>
+                {inventory.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} ({item.quantity} {item.unit})
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Item" className="md:col-span-2">
               <Input value={form.itemName} onChange={(event) => setForm({ ...form, itemName: event.target.value })} required />
             </Field>

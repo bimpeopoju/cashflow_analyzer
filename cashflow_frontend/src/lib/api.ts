@@ -24,6 +24,7 @@ export interface Business {
 export interface Sale {
   id: number
   itemName: string
+  inventoryItemId: number | null
   amount: string
   quantity: number
   note: string
@@ -245,7 +246,7 @@ export const api = {
     }),
   dashboard: () => request<DashboardData>(businessPath('/dashboard/')),
   sales: () => request<{ sales: Sale[] }>(businessPath('/sales/')),
-  createSale: (payload: { itemName: string; amount: string; quantity: number; note?: string }) =>
+  createSale: (payload: { inventoryItemId?: number | null; itemName: string; amount: string; quantity: number; note?: string }) =>
     request<{ sale: Sale }>(businessPath('/sales/'), {
       method: 'POST',
       body: JSON.stringify(payload),
