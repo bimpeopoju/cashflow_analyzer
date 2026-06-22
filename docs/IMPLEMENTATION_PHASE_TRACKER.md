@@ -28,14 +28,14 @@ Status: Complete
 
 ## Phase 2: Finance Service Layer
 
-Status: In progress
+Status: Complete
 
-- [ ] Add finance serializers.
-- [ ] Add finance selectors for scoped reads.
-- [ ] Add finance services for writes.
-- [ ] Add finance calculation services.
-- [ ] Add reusable business permission checks.
-- [ ] Thin out finance HTTP views.
+- [x] Add finance serializers.
+- [x] Add finance selectors for scoped reads.
+- [x] Add finance services for writes.
+- [x] Add finance calculation services.
+- [x] Add reusable business permission checks.
+- [x] Thin out finance HTTP views.
 
 ## Phase 3: Sales, Sale Lines, And Inventory Movements
 
