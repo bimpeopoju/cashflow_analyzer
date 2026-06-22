@@ -94,6 +94,30 @@ class Sale(models.Model):
         return f'{self.item_name} - {self.amount}'
 
 
+class SaleLine(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='lines')
+    inventory_item = models.ForeignKey(
+        'InventoryItem',
+        on_delete=models.SET_NULL,
+        related_name='sale_lines',
+        null=True,
+        blank=True,
+    )
+    item_name = models.CharField(max_length=120)
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    line_total = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self) -> str:
+        return f'{self.item_name} x {self.quantity}'
+
+
 class Expense(models.Model):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='expenses')
     category = models.CharField(max_length=120)
@@ -123,3 +147,34 @@ class InventoryItem(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class StockMovement(models.Model):
+    MOVEMENT_PURCHASE = 'purchase'
+    MOVEMENT_SALE = 'sale'
+    MOVEMENT_ADJUSTMENT = 'adjustment'
+    MOVEMENT_LOSS = 'loss'
+    MOVEMENT_RETURN = 'return'
+    MOVEMENT_CHOICES = [
+        (MOVEMENT_PURCHASE, 'Purchase'),
+        (MOVEMENT_SALE, 'Sale'),
+        (MOVEMENT_ADJUSTMENT, 'Adjustment'),
+        (MOVEMENT_LOSS, 'Loss'),
+        (MOVEMENT_RETURN, 'Return'),
+    ]
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='stock_movements')
+    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='stock_movements')
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_CHOICES)
+    quantity_change = models.IntegerField()
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    reference_type = models.CharField(max_length=40, blank=True)
+    reference_id = models.PositiveIntegerField(null=True, blank=True)
+    note = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    def __str__(self) -> str:
+        return f'{self.inventory_item} {self.quantity_change}'

@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import Business, BusinessMembership, BusinessProfile, Expense, InventoryItem, Sale
+from .models import (
+    Business,
+    BusinessMembership,
+    BusinessProfile,
+    Expense,
+    InventoryItem,
+    Sale,
+    SaleLine,
+    StockMovement,
+)
 
 
 @admin.register(BusinessProfile)
@@ -29,6 +38,12 @@ class SaleAdmin(admin.ModelAdmin):
     search_fields = ('business__name', 'item_name')
 
 
+@admin.register(SaleLine)
+class SaleLineAdmin(admin.ModelAdmin):
+    list_display = ('sale', 'item_name', 'quantity', 'unit_price', 'unit_cost', 'line_total')
+    search_fields = ('sale__business__name', 'item_name')
+
+
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
     list_display = ('business', 'category', 'amount', 'spent_at')
@@ -40,3 +55,10 @@ class ExpenseAdmin(admin.ModelAdmin):
 class InventoryItemAdmin(admin.ModelAdmin):
     list_display = ('business', 'name', 'quantity', 'unit', 'reorder_level', 'unit_cost')
     search_fields = ('business__name', 'name')
+
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ('business', 'inventory_item', 'movement_type', 'quantity_change', 'unit_cost', 'created_at')
+    list_filter = ('movement_type', 'created_at')
+    search_fields = ('business__name', 'inventory_item__name', 'reference_type')
