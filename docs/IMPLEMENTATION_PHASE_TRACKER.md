@@ -39,14 +39,14 @@ Status: Complete
 
 ## Phase 3: Sales, Sale Lines, And Inventory Movements
 
-Status: In progress
+Status: Complete
 
-- [ ] Add `SaleLine`.
-- [ ] Add `StockMovement`.
-- [ ] Support itemized sales.
-- [ ] Reduce inventory when linked inventory items are sold.
-- [ ] Preserve unit price and unit cost snapshots on sale lines.
-- [ ] Update dashboard gross profit calculation.
+- [x] Add `SaleLine`.
+- [x] Add `StockMovement`.
+- [x] Support single-line itemized sales through the existing sale API.
+- [x] Reduce inventory when linked inventory items are sold.
+- [x] Preserve unit price and unit cost snapshots on sale lines.
+- [x] Update dashboard gross profit calculation.
 
 ## Phase 4: Cash Flow Versus Profit
 
