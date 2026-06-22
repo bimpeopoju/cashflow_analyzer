@@ -64,8 +64,20 @@ def validate_expense_payload(data):
     payment_status = str(data.get('paymentStatus', 'paid')).strip() or 'paid'
     if payment_status not in {'paid', 'unpaid'}:
         raise ValueError('paymentStatus must be paid or unpaid.')
+    expense_type = str(data.get('expenseType', 'operating')).strip() or 'operating'
+    allowed_types = {
+        'operating',
+        'inventory_purchase',
+        'tax',
+        'capital',
+        'personal_withdrawal',
+        'other',
+    }
+    if expense_type not in allowed_types:
+        raise ValueError('expenseType is not supported.')
     return {
         'category': text_from_payload(data, 'category', 'Category'),
+        'expense_type': expense_type,
         'amount': decimal_from_payload(data, 'amount'),
         'payment_status': payment_status,
         'note': text_from_payload(data, 'note', 'Note', required=False),
@@ -91,6 +103,7 @@ def sale_payload(sale):
         'amount': money(sale.amount),
         'amountPaid': money(sale.amount_paid),
         'paymentStatus': sale.payment_status,
+        'status': sale.status,
         'quantity': sale.quantity,
         'note': sale.note,
         'createdAt': sale.sold_at.isoformat(),
@@ -101,8 +114,10 @@ def expense_payload(expense):
     return {
         'id': expense.id,
         'category': expense.category,
+        'expenseType': expense.expense_type,
         'amount': money(expense.amount),
         'paymentStatus': expense.payment_status,
+        'status': expense.status,
         'note': expense.note,
         'createdAt': expense.spent_at.isoformat(),
     }
@@ -117,4 +132,11 @@ def inventory_payload(item):
         'reorderLevel': item.reorder_level,
         'unitCost': money(item.unit_cost),
         'stockValue': money(item.unit_cost * item.quantity),
+        'status': item.status,
+    }
+
+
+def validate_void_payload(data):
+    return {
+        'reason': text_from_payload(data, 'reason', 'Reason', required=False),
     }

@@ -101,7 +101,7 @@ class FinanceApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Business.objects.filter(name='Second Stall').exists())
 
-    def test_create_and_delete_sale(self):
+    def test_create_and_delete_sale_voids_record(self):
         User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
         self.client.login(username='amina@example.com', password='secret123')
 
@@ -118,7 +118,9 @@ class FinanceApiTests(TestCase):
         delete_response = self.client.delete(f'/api/sales/{sale_id}/')
 
         self.assertEqual(delete_response.status_code, 200)
-        self.assertEqual(Sale.objects.count(), 0)
+        self.assertEqual(Sale.objects.count(), 1)
+        self.assertEqual(Sale.objects.get(id=sale_id).status, 'voided')
+        self.assertEqual(self.client.get('/api/sales/').json()['sales'], [])
 
     def test_requires_auth_for_private_endpoints(self):
         response = self.client.get('/api/dashboard/')
@@ -199,6 +201,77 @@ class FinanceServiceLayerTests(TestCase):
 
         self.assertEqual(expense.payment_status, 'unpaid')
         self.assertEqual(CashEntry.objects.filter(reference_type='expense', reference_id=expense.id).count(), 0)
+
+    def test_void_sale_restores_stock_and_records_reversal(self):
+        item = InventoryItem.objects.create(
+            business=self.business,
+            name='Tomatoes',
+            quantity=10,
+            unit_cost=Decimal('800.00'),
+        )
+        sale = create_sale(
+            business=self.business,
+            user=self.user,
+            payload={
+                'inventory_item_id': item.id,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('3000.00'),
+                'amount_paid': Decimal('3000.00'),
+                'payment_status': 'paid',
+                'quantity': 3,
+                'note': '',
+            },
+        )
+
+        from .services import void_sale
+        self.assertTrue(void_sale(business=self.business, pk=sale.id, user=self.user, reason='Wrong sale'))
+
+        item.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(item.quantity, 10)
+        self.assertEqual(sale.status, 'voided')
+        self.assertEqual(sale.void_reason, 'Wrong sale')
+        self.assertTrue(CashEntry.objects.filter(reference_type='sale_void', reference_id=sale.id).exists())
+
+    def test_void_expense_records_cash_reversal(self):
+        expense = create_expense(
+            business=self.business,
+            user=self.user,
+            payload={
+                'category': 'Transport',
+                'expense_type': 'operating',
+                'amount': Decimal('1200.00'),
+                'payment_status': 'paid',
+                'note': '',
+            },
+        )
+
+        from .services import void_expense
+        self.assertTrue(void_expense(business=self.business, pk=expense.id, user=self.user, reason='Duplicate'))
+
+        expense.refresh_from_db()
+        self.assertEqual(expense.status, 'voided')
+        self.assertTrue(CashEntry.objects.filter(reference_type='expense_void', reference_id=expense.id).exists())
+
+    def test_void_inventory_item_hides_item(self):
+        item = create_inventory_item(
+            business=self.business,
+            user=self.user,
+            payload={
+                'name': 'Pepper',
+                'quantity': 4,
+                'unit': 'basket',
+                'reorder_level': 1,
+                'unit_cost': Decimal('1500.00'),
+            },
+        )
+
+        from .services import void_inventory_item
+        self.assertTrue(void_inventory_item(business=self.business, pk=item.id, user=self.user, reason='Bad entry'))
+
+        item.refresh_from_db()
+        self.assertEqual(item.status, 'voided')
+        self.assertEqual(list(inventory_for_business(self.business)), [])
 
     def test_create_sale_service_reduces_inventory_and_records_movement(self):
         item = InventoryItem.objects.create(

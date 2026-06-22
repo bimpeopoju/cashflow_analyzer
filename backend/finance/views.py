@@ -24,6 +24,7 @@ from .serializers import (
     validate_expense_payload,
     validate_inventory_payload,
     validate_sale_payload,
+    validate_void_payload,
 )
 from .services import (
     business_payload,
@@ -31,10 +32,10 @@ from .services import (
     create_expense,
     create_inventory_item,
     create_sale,
-    delete_expense,
-    delete_inventory_item,
-    delete_sale,
     get_business_for_user,
+    void_expense,
+    void_inventory_item,
+    void_sale,
 )
 
 
@@ -119,7 +120,11 @@ def sales_view(request, business_id=None):
         return JsonResponse({'sales': [sale_payload(sale) for sale in sales_for_business(business)[:50]]})
 
     try:
-        sale = create_sale(business=business, payload=validate_sale_payload(read_json(request)))
+        sale = create_sale(
+            business=business,
+            payload=validate_sale_payload(read_json(request)),
+            user=request.user,
+        )
     except ValueError as exc:
         return JsonResponse({'message': str(exc)}, status=400)
     return JsonResponse({'sale': sale_payload(sale)}, status=201)
@@ -134,8 +139,12 @@ def sale_detail_view(request, pk, business_id=None):
     business, error_response = resolve_business_or_response(request, business_id)
     if error_response:
         return error_response
-    delete_sale(business=business, pk=pk)
-    return JsonResponse({'message': 'Sale deleted.'})
+    try:
+        payload = validate_void_payload(read_json(request))
+    except ValueError as exc:
+        return JsonResponse({'message': str(exc)}, status=400)
+    void_sale(business=business, pk=pk, user=request.user, reason=payload['reason'])
+    return JsonResponse({'message': 'Sale voided.'})
 
 
 @csrf_exempt
@@ -153,7 +162,11 @@ def expenses_view(request, business_id=None):
         return JsonResponse({'expenses': [expense_payload(expense) for expense in expenses_for_business(business)[:50]]})
 
     try:
-        expense = create_expense(business=business, payload=validate_expense_payload(read_json(request)))
+        expense = create_expense(
+            business=business,
+            payload=validate_expense_payload(read_json(request)),
+            user=request.user,
+        )
     except ValueError as exc:
         return JsonResponse({'message': str(exc)}, status=400)
     return JsonResponse({'expense': expense_payload(expense)}, status=201)
@@ -168,8 +181,12 @@ def expense_detail_view(request, pk, business_id=None):
     business, error_response = resolve_business_or_response(request, business_id)
     if error_response:
         return error_response
-    delete_expense(business=business, pk=pk)
-    return JsonResponse({'message': 'Expense deleted.'})
+    try:
+        payload = validate_void_payload(read_json(request))
+    except ValueError as exc:
+        return JsonResponse({'message': str(exc)}, status=400)
+    void_expense(business=business, pk=pk, user=request.user, reason=payload['reason'])
+    return JsonResponse({'message': 'Expense voided.'})
 
 
 @csrf_exempt
@@ -187,7 +204,11 @@ def inventory_view(request, business_id=None):
         return JsonResponse({'items': [inventory_payload(item) for item in inventory_for_business(business)[:100]]})
 
     try:
-        item = create_inventory_item(business=business, payload=validate_inventory_payload(read_json(request)))
+        item = create_inventory_item(
+            business=business,
+            payload=validate_inventory_payload(read_json(request)),
+            user=request.user,
+        )
     except ValueError as exc:
         return JsonResponse({'message': str(exc)}, status=400)
     return JsonResponse({'item': inventory_payload(item)}, status=201)
@@ -202,5 +223,9 @@ def inventory_detail_view(request, pk, business_id=None):
     business, error_response = resolve_business_or_response(request, business_id)
     if error_response:
         return error_response
-    delete_inventory_item(business=business, pk=pk)
-    return JsonResponse({'message': 'Inventory item deleted.'})
+    try:
+        payload = validate_void_payload(read_json(request))
+    except ValueError as exc:
+        return JsonResponse({'message': str(exc)}, status=400)
+    void_inventory_item(business=business, pk=pk, user=request.user, reason=payload['reason'])
+    return JsonResponse({'message': 'Inventory item voided.'})

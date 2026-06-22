@@ -11,19 +11,19 @@ def default_business_for_user(user):
 
 
 def sales_for_business(business):
-    return Sale.objects.filter(business=business)
+    return Sale.objects.filter(business=business, status=Sale.STATUS_COMPLETED)
 
 
 def expenses_for_business(business):
-    return Expense.objects.filter(business=business)
+    return Expense.objects.filter(business=business, status=Expense.STATUS_APPROVED)
 
 
 def inventory_for_business(business):
-    return InventoryItem.objects.filter(business=business)
+    return InventoryItem.objects.filter(business=business, status=InventoryItem.STATUS_ACTIVE)
 
 
 def sale_lines_for_business(business):
-    return SaleLine.objects.filter(sale__business=business).select_related('sale', 'inventory_item')
+    return SaleLine.objects.filter(sale__business=business, sale__status=Sale.STATUS_COMPLETED).select_related('sale', 'inventory_item')
 
 
 def stock_movements_for_business(business):
