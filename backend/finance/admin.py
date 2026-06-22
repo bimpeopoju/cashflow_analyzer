@@ -34,8 +34,8 @@ class BusinessMembershipAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ('business', 'item_name', 'amount', 'amount_paid', 'payment_status', 'quantity', 'sold_at')
-    list_filter = ('payment_status', 'sold_at')
+    list_display = ('business', 'item_name', 'amount', 'amount_paid', 'payment_status', 'status', 'quantity', 'sold_at')
+    list_filter = ('payment_status', 'status', 'sold_at')
     search_fields = ('business__name', 'item_name')
 
 
@@ -47,14 +47,15 @@ class SaleLineAdmin(admin.ModelAdmin):
 
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ('business', 'category', 'amount', 'payment_status', 'spent_at')
-    list_filter = ('payment_status', 'spent_at')
+    list_display = ('business', 'category', 'expense_type', 'amount', 'payment_status', 'status', 'spent_at')
+    list_filter = ('expense_type', 'payment_status', 'status', 'spent_at')
     search_fields = ('business__name', 'category')
 
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ('business', 'name', 'quantity', 'unit', 'reorder_level', 'unit_cost')
+    list_display = ('business', 'name', 'quantity', 'unit', 'reorder_level', 'unit_cost', 'status')
+    list_filter = ('status',)
     search_fields = ('business__name', 'name')
 
 

@@ -88,15 +88,40 @@ class Sale(models.Model):
         (PAYMENT_PARTIAL, 'Partial'),
         (PAYMENT_UNPAID, 'Unpaid'),
     ]
+    STATUS_COMPLETED = 'completed'
+    STATUS_VOIDED = 'voided'
+    STATUS_REFUNDED = 'refunded'
+    STATUS_CHOICES = [
+        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_VOIDED, 'Voided'),
+        (STATUS_REFUNDED, 'Refunded'),
+    ]
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='sales')
     item_name = models.CharField(max_length=120)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_PAID)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_COMPLETED)
     quantity = models.PositiveIntegerField(default=1)
     note = models.CharField(max_length=240, blank=True)
     sold_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='created_sales',
+        null=True,
+        blank=True,
+    )
+    voided_at = models.DateTimeField(null=True, blank=True)
+    voided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='voided_sales',
+        null=True,
+        blank=True,
+    )
+    void_reason = models.CharField(max_length=240, blank=True)
 
     class Meta:
         ordering = ['-sold_at']
@@ -136,13 +161,51 @@ class Expense(models.Model):
         (PAYMENT_PAID, 'Paid'),
         (PAYMENT_UNPAID, 'Unpaid'),
     ]
+    TYPE_OPERATING = 'operating'
+    TYPE_INVENTORY_PURCHASE = 'inventory_purchase'
+    TYPE_TAX = 'tax'
+    TYPE_CAPITAL = 'capital'
+    TYPE_PERSONAL_WITHDRAWAL = 'personal_withdrawal'
+    TYPE_OTHER = 'other'
+    EXPENSE_TYPE_CHOICES = [
+        (TYPE_OPERATING, 'Operating'),
+        (TYPE_INVENTORY_PURCHASE, 'Inventory purchase'),
+        (TYPE_TAX, 'Tax'),
+        (TYPE_CAPITAL, 'Capital'),
+        (TYPE_PERSONAL_WITHDRAWAL, 'Personal withdrawal'),
+        (TYPE_OTHER, 'Other'),
+    ]
+    STATUS_APPROVED = 'approved'
+    STATUS_VOIDED = 'voided'
+    STATUS_CHOICES = [
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_VOIDED, 'Voided'),
+    ]
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='expenses')
     category = models.CharField(max_length=120)
+    expense_type = models.CharField(max_length=40, choices=EXPENSE_TYPE_CHOICES, default=TYPE_OPERATING)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_PAID)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_APPROVED)
     note = models.CharField(max_length=240, blank=True)
     spent_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='created_expenses',
+        null=True,
+        blank=True,
+    )
+    voided_at = models.DateTimeField(null=True, blank=True)
+    voided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='voided_expenses',
+        null=True,
+        blank=True,
+    )
+    void_reason = models.CharField(max_length=240, blank=True)
 
     class Meta:
         ordering = ['-spent_at']
@@ -152,14 +215,38 @@ class Expense(models.Model):
 
 
 class InventoryItem(models.Model):
+    STATUS_ACTIVE = 'active'
+    STATUS_VOIDED = 'voided'
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_VOIDED, 'Voided'),
+    ]
+
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='inventory_items')
     name = models.CharField(max_length=120)
     quantity = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=40, default='pcs')
     reorder_level = models.PositiveIntegerField(default=5)
     unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='created_inventory_items',
+        null=True,
+        blank=True,
+    )
+    voided_at = models.DateTimeField(null=True, blank=True)
+    voided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='voided_inventory_items',
+        null=True,
+        blank=True,
+    )
+    void_reason = models.CharField(max_length=240, blank=True)
 
     class Meta:
         ordering = ['name']
