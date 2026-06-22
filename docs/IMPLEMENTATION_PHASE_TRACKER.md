@@ -39,7 +39,7 @@ Status: Complete
 
 ## Phase 3: Sales, Sale Lines, And Inventory Movements
 
-Status: Not started
+Status: In progress
 
 - [ ] Add `SaleLine`.
 - [ ] Add `StockMovement`.
