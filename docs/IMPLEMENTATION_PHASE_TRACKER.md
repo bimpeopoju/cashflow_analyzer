@@ -50,7 +50,7 @@ Status: Complete
 
 ## Phase 4: Cash Flow Versus Profit
 
-Status: Not started
+Status: In progress
 
 - [ ] Add `CashEntry`.
 - [ ] Record sale payments as cash inflows.
