@@ -68,7 +68,19 @@ Status: Complete
 - [x] Add void reasons and timestamps.
 - [x] Update frontend delete flows to use void actions.
 
-## Phase 6: Reports And Analytics
+## Phase 6: Modular App Split
+
+Status: In progress
+
+- [ ] Create `businesses` app for ownership and membership.
+- [ ] Create `sales` app for sale lines and void flows.
+- [ ] Create `inventory` app for stock records and stock movements.
+- [ ] Create `expenses` app for expense records and void flows.
+- [ ] Create `cashflow` app for cash entries and cash position.
+- [ ] Create `reports` app for dashboard and derived metrics.
+- [ ] Leave `finance` as a compatibility layer during migration.
+
+## Phase 7: Reports And Analytics
 
 Status: Not started
 
@@ -79,7 +91,7 @@ Status: Not started
 - [ ] Add trend analysis.
 - [ ] Add initial forecasting service.
 
-## Phase 7: Tax Rules And Estimates
+## Phase 8: Tax Rules And Estimates
 
 Status: Not started
 
@@ -89,7 +101,7 @@ Status: Not started
 - [ ] Preserve assumptions and rule versions on estimates.
 - [ ] Label estimates clearly as estimates, not filed tax.
 
-## Phase 8: Team Access And OAuth
+## Phase 9: Team Access And OAuth
 
 Status: Not started
 
@@ -98,7 +110,7 @@ Status: Not started
 - [ ] Add permission-aware frontend views.
 - [ ] Implement Google OAuth when credentials and redirects are available.
 
-## Phase 9: Frontend App Architecture
+## Phase 10: Frontend App Architecture
 
 Status: Not started
 
@@ -109,7 +121,7 @@ Status: Not started
 - [ ] Add global loading, empty, error, and toast patterns.
 - [ ] Replace hardcoded sidebar user/footer details.
 
-## Phase 10: Release Readiness
+## Phase 11: Release Readiness
 
 Status: Not started
 
