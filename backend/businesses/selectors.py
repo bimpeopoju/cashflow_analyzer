@@ -1,4 +1,4 @@
-from finance.models import BusinessMembership
+from businesses.models import BusinessMembership
 from businesses.services import ensure_default_business
 
 

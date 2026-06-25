@@ -7,7 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.serializers import ValidationError as SerializerValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from finance.services import create_business_for_user
+from businesses.services import create_business_for_user
 
 
 User = get_user_model()

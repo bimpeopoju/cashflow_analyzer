@@ -1,4 +1,4 @@
-from finance.models import Expense
+from expenses.models import Expense
 
 
 def expenses_for_business(business):

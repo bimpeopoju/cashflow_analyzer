@@ -3,7 +3,8 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
-from finance.models import CashEntry, InventoryItem
+from cashflow.models import CashEntry
+from inventory.models import InventoryItem
 
 
 @transaction.atomic

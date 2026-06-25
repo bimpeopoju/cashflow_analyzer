@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from finance.services import ensure_default_business, money
+from businesses.services import ensure_default_business, money
 
 
 def serialize_user(user):

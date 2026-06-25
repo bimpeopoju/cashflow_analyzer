@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
-from finance.services import money
+from sales.models import SaleLine
+from businesses.services import money
 
 
 def decimal_from_payload(data, field):
@@ -53,7 +54,7 @@ def validate_sale_payload(data):
 
 
 def sale_payload(sale):
-    first_line = sale.lines.first()
+    first_line = SaleLine.objects.filter(sale=sale).first()
     return {
         'id': sale.id,
         'itemName': sale.item_name,

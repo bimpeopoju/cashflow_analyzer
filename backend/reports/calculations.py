@@ -4,8 +4,8 @@ from decimal import Decimal
 from django.db.models import F, Sum
 from django.utils import timezone
 
-from finance.serializers import inventory_payload
-from finance.services import money
+from inventory.serializers import inventory_payload
+from businesses.services import money
 
 
 def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=None, cash_entries=None):

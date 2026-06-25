@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 
-from finance.models import Business, BusinessMembership, BusinessProfile
+from businesses.models import Business, BusinessMembership, BusinessProfile
 
 
 def money(value):

@@ -1,10 +1,10 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from finance.services import get_business_for_user
 from reports.calculations import dashboard_for_business
 from reports.selectors import cash_entries_for_business, expenses_for_business, inventory_for_business, sale_lines_for_business, sales_for_business
 from users.serializers import serialize_user
+from businesses.services import get_business_for_user
 
 
 def require_user(request):

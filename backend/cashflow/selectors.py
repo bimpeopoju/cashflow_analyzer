@@ -1,4 +1,4 @@
-from finance.models import CashEntry
+from cashflow.models import CashEntry
 
 
 def cash_entries_for_business(business):

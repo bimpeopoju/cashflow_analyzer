@@ -1,7 +1,8 @@
 from django.db import transaction
 from django.utils import timezone
 
-from finance.models import CashEntry, Expense
+from cashflow.models import CashEntry
+from expenses.models import Expense
 
 
 @transaction.atomic

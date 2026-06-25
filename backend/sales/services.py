@@ -3,7 +3,9 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
-from finance.models import CashEntry, InventoryItem, Sale, SaleLine, StockMovement
+from cashflow.models import CashEntry
+from inventory.models import InventoryItem, StockMovement
+from sales.models import Sale, SaleLine
 
 
 @transaction.atomic
@@ -86,7 +88,7 @@ def void_sale(*, business, pk, user=None, reason=''):
     sale.void_reason = reason
     sale.save(update_fields=['status', 'voided_at', 'voided_by', 'void_reason'])
 
-    for line in sale.lines.select_related('inventory_item'):
+    for line in SaleLine.objects.filter(sale=sale).select_related('inventory_item'):
         if line.inventory_item_id:
             item = InventoryItem.objects.select_for_update().get(pk=line.inventory_item_id)
             item.quantity += line.quantity

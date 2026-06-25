@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from finance.models import BusinessMembership
+from businesses.models import BusinessMembership
 from businesses.selectors import list_user_businesses
 from businesses.serializers import validate_business_payload
 from businesses.services import business_payload, create_business_for_user

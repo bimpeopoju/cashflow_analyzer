@@ -1,4 +1,4 @@
-from finance.models import InventoryItem, StockMovement
+from inventory.models import InventoryItem, StockMovement
 
 
 def inventory_for_business(business):

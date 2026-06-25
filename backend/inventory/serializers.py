@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
-from finance.services import money
+from businesses.services import money
 
 
 def decimal_from_payload(data, field):

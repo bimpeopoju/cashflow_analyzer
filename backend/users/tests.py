@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
-from finance.models import Business, BusinessMembership
+from businesses.models import Business, BusinessMembership
 
 from .models import OAuthIdentity
 

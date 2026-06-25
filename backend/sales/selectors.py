@@ -1,4 +1,4 @@
-from finance.models import Sale, SaleLine
+from sales.models import Sale, SaleLine
 
 
 def sales_for_business(business):
