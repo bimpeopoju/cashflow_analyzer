@@ -5,9 +5,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from finance.models import BusinessMembership
-from finance.serializers import validate_business_payload
-from finance.services import business_payload, create_business_for_user
-from finance.selectors import list_user_businesses
+from businesses.selectors import list_user_businesses
+from businesses.serializers import validate_business_payload
+from businesses.services import business_payload, create_business_for_user
 
 
 def read_json(request):

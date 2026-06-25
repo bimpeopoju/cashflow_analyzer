@@ -70,15 +70,15 @@ Status: Complete
 
 ## Phase 6: Modular App Split
 
-Status: In progress
+Status: Complete
 
-- [ ] Create `businesses` app for ownership and membership.
-- [ ] Create `sales` app for sale lines and void flows.
-- [ ] Create `inventory` app for stock records and stock movements.
-- [ ] Create `expenses` app for expense records and void flows.
-- [ ] Create `cashflow` app for cash entries and cash position.
-- [ ] Create `reports` app for dashboard and derived metrics.
-- [ ] Leave `finance` as a compatibility layer during migration.
+- [x] Create `businesses` app for ownership and membership.
+- [x] Create `sales` app for sale lines and void flows.
+- [x] Create `inventory` app for stock records and stock movements.
+- [x] Create `expenses` app for expense records and void flows.
+- [x] Create `cashflow` app for cash entries and cash position.
+- [x] Create `reports` app for dashboard and derived metrics.
+- [x] Leave `finance` as a compatibility layer during migration.
 
 ## Phase 7: Reports And Analytics
 

@@ -4,9 +4,10 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from finance.selectors import sales_for_business
-from finance.serializers import sale_payload, validate_sale_payload, validate_void_payload
-from finance.services import create_sale, get_business_for_user, void_sale
+from finance.services import get_business_for_user
+from sales.selectors import sales_for_business
+from sales.services import create_sale, void_sale
+from sales.serializers import sale_payload, validate_sale_payload, validate_void_payload
 
 
 def read_json(request):
