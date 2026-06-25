@@ -127,6 +127,19 @@ class FinanceApiTests(TestCase):
 
         self.assertEqual(response.status_code, 401)
 
+    def test_capital_withdrawal_rejects_capital_erosion(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        self.client.login(username='amina@example.com', password='secret123')
+
+        response = self.post_json(f'/api/businesses/{business.id}/capital/', {
+            'entryType': 'owner_withdrawal',
+            'amount': '1000',
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('erode capital', response.json()['message'])
+
 
 class FinanceServiceLayerTests(TestCase):
     def setUp(self):

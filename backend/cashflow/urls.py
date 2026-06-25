@@ -1,8 +1,8 @@
 from django.urls import path
 
-from sales.views import dashboard_view
+from .views import capital_view
 
 
 urlpatterns = [
-    path('dashboard/', dashboard_view, name='dashboard'),
+    path('businesses/<int:business_id>/capital/', capital_view, name='capital'),
 ]
