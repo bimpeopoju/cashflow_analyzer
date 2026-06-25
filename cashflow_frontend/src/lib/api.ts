@@ -39,6 +39,15 @@ export interface Expense {
   createdAt: string
 }
 
+export interface CapitalEntry {
+  id: number
+  entryType: 'owner_deposit' | 'owner_withdrawal'
+  direction: 'inflow' | 'outflow'
+  amount: string
+  note: string
+  createdAt: string
+}
+
 export interface InventoryItem {
   id: number
   name: string
@@ -63,7 +72,14 @@ export interface DashboardData {
     outstandingSales: string
     transactionsToday: number
     initialCapital: string
+    capitalContributions: string
+    capitalWithdrawals: string
+    protectedCapitalFloor: string
+    retainedProfit: string
     currentCapital: string
+    capitalGap: string
+    capitalEroded: boolean
+    availableProfit: string
     inventoryValue: string
   }
   recentActivity: Array<{
@@ -263,6 +279,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   deleteExpense: (id: number) => request<{ message: string }>(businessPath(`/expenses/${id}/`), { method: 'DELETE' }),
+  capitalEntries: () => request<{ entries: CapitalEntry[] }>(businessPath('/capital/')),
+  createCapitalEntry: (payload: { entryType: 'owner_deposit' | 'owner_withdrawal'; amount: string; note?: string }) =>
+    request<{ entry: CapitalEntry }>(businessPath('/capital/'), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   inventory: () => request<{ items: InventoryItem[] }>(businessPath('/inventory/')),
   createInventoryItem: (payload: {
     name: string

@@ -100,26 +100,46 @@ export default function Dashboard() {
               <CardTitle className="text-base">Capital Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {summary.capitalEroded && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  Protected capital is under pressure. Trading losses or withdrawals have pushed equity below the capital floor.
+                </div>
+              )}
               <div>
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs text-neutral-500">Initial Capital</span>
                   <span className="text-sm font-semibold">{formatNaira(summary.initialCapital)}</span>
                 </div>
                 <div className="flex items-center justify-between">
+                  <span className="text-xs text-neutral-500">Protected Capital Floor</span>
+                  <span className="text-sm font-semibold text-neutral-700">{formatNaira(summary.protectedCapitalFloor)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-neutral-500">Equity Position</span>
+                  <span className={`text-sm font-semibold ${summary.capitalEroded ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatNaira(summary.currentCapital)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
                   <span className="text-xs text-neutral-500">Cash Position</span>
-                  <span className="text-sm font-semibold text-green-600">{formatNaira(summary.cashPosition)}</span>
+                  <span className="text-sm font-semibold text-blue-600">{formatNaira(summary.cashPosition)}</span>
                 </div>
               </div>
               <Separator />
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <p className="text-neutral-500">Cash In</p>
-                  <p className="font-semibold text-green-700">{formatNaira(summary.cashInflow)}</p>
+                  <p className="text-neutral-500">Capital In</p>
+                  <p className="font-semibold text-green-700">{formatNaira(summary.capitalContributions)}</p>
                 </div>
                 <div>
-                  <p className="text-neutral-500">Cash Out</p>
-                  <p className="font-semibold text-red-700">{formatNaira(summary.cashOutflow)}</p>
+                  <p className="text-neutral-500">Capital Out</p>
+                  <p className="font-semibold text-red-700">{formatNaira(summary.capitalWithdrawals)}</p>
                 </div>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-neutral-500">Available Profit</span>
+                <span className="font-semibold">{formatNaira(summary.availableProfit)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between text-xs">

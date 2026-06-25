@@ -16,16 +16,22 @@ export default function ReportsPage() {
   if (!data) return <div className="p-6 text-sm text-neutral-500">Loading reports...</div>
 
   const taxableEstimate = Math.max(Number(data.summary.netProfit), 0) * 0.1
+  const capitalEroded = data.summary.capitalEroded
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-bold text-neutral-900 md:text-3xl">Reports</h1>
-        <p className="mt-1 text-sm text-neutral-500">A simple view of profit, capital, and estimated tax exposure.</p>
+        <p className="mt-1 text-sm text-neutral-500">A simple view of profit, capital protection, and estimated tax exposure.</p>
       </div>
+      {capitalEroded && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Equity is below the protected capital floor. Avoid withdrawals until profit recovers.
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-3">
         <ReportCard title="Net Profit" value={formatNaira(data.summary.netProfit)} description="Sales less expenses" />
-        <ReportCard title="Current Capital" value={formatNaira(data.summary.currentCapital)} description="Initial capital plus net profit" />
+        <ReportCard title="Equity Position" value={formatNaira(data.summary.currentCapital)} description="Initial capital, contributions, and retained profit" />
         <ReportCard title="Tax Set-Aside" value={formatNaira(taxableEstimate)} description="Conservative 10% profit reserve" />
       </div>
       <Card>
