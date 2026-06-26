@@ -4,11 +4,24 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .calculations import dashboard_for_business
-from .models import Business, CashEntry, Expense, InventoryItem, Sale, SaleLine, StockMovement
-from .selectors import cash_entries_for_business, expenses_for_business, inventory_for_business, sales_for_business
-from .serializers import validate_expense_payload, validate_sale_payload
-from .services import create_expense, create_inventory_item, create_sale, ensure_default_business
+from businesses.models import Business
+from businesses.services import ensure_default_business
+from cashflow.models import CashEntry
+from cashflow.selectors import cash_entries_for_business
+from expenses.models import Expense
+from expenses.selectors import expenses_for_business
+from expenses.serializers import validate_expense_payload
+from expenses.services import create_expense
+from inventory.models import InventoryItem, StockMovement
+from inventory.selectors import inventory_for_business
+from inventory.services import create_inventory_item
+from reports.calculations import dashboard_for_business
+from sales.models import Sale, SaleLine
+from sales.selectors import sale_lines_for_business, sales_for_business
+from sales.serializers import validate_sale_payload
+from sales.services import create_sale, void_sale
+from expenses.services import void_expense
+from inventory.services import void_inventory_item
 
 
 User = get_user_model()
@@ -30,10 +43,11 @@ class FinanceApiTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json()['user']['email'], 'amina@example.com')
+        payload = response.json()
+        self.assertEqual(payload['user']['email'], 'amina@example.com')
         self.assertTrue(User.objects.filter(username='amina@example.com').exists())
 
-        me_response = self.client.get('/api/auth/me/')
+        me_response = self.client.get('/api/auth/me/', HTTP_AUTHORIZATION=f"Bearer {payload['tokens']['access']}")
         self.assertEqual(me_response.status_code, 200)
 
     def test_login_rejects_bad_credentials(self):
@@ -236,7 +250,6 @@ class FinanceServiceLayerTests(TestCase):
             },
         )
 
-        from .services import void_sale
         self.assertTrue(void_sale(business=self.business, pk=sale.id, user=self.user, reason='Wrong sale'))
 
         item.refresh_from_db()
@@ -259,7 +272,6 @@ class FinanceServiceLayerTests(TestCase):
             },
         )
 
-        from .services import void_expense
         self.assertTrue(void_expense(business=self.business, pk=expense.id, user=self.user, reason='Duplicate'))
 
         expense.refresh_from_db()
@@ -279,7 +291,6 @@ class FinanceServiceLayerTests(TestCase):
             },
         )
 
-        from .services import void_inventory_item
         self.assertTrue(void_inventory_item(business=self.business, pk=item.id, user=self.user, reason='Bad entry'))
 
         item.refresh_from_db()
@@ -308,7 +319,7 @@ class FinanceServiceLayerTests(TestCase):
         )
 
         item.refresh_from_db()
-        line = sale.lines.get()
+        line = SaleLine.objects.get(sale=sale)
         movement = StockMovement.objects.get(reference_id=line.id)
         self.assertEqual(item.quantity, 7)
         self.assertEqual(line.inventory_item, item)
@@ -370,7 +381,7 @@ class FinanceServiceLayerTests(TestCase):
             sales=sales_for_business(self.business),
             expenses=expenses_for_business(self.business),
             inventory=inventory_for_business(self.business),
-            sale_lines=self.business.sales.first().lines.all(),
+            sale_lines=sale_lines_for_business(self.business),
             cash_entries=cash_entries_for_business(self.business),
         )
 
