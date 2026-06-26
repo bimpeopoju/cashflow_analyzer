@@ -6,4 +6,6 @@ from .views import sale_detail_view, sales_view
 urlpatterns = [
     path('sales/', sales_view, name='sales'),
     path('sales/<int:pk>/', sale_detail_view, name='sale_detail'),
+    path('businesses/<int:business_id>/sales/', sales_view, name='business_sales'),
+    path('businesses/<int:business_id>/sales/<int:pk>/', sale_detail_view, name='business_sale_detail'),
 ]
