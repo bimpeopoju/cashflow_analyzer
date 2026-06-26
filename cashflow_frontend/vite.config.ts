@@ -5,6 +5,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  envDir: path.resolve(__dirname, '..'),
   server: {
     proxy: {
       '/api': 'http://127.0.0.1:8000',

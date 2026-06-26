@@ -1,3 +1,5 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.contrib.auth import login, logout
 from rest_framework import status
@@ -11,6 +13,7 @@ from .serializers import LoginSerializer, LogoutSerializer, RegisterSerializer, 
 from .services import authenticate_user, register_user, token_pair_for_user
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -25,6 +28,7 @@ class RegisterView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -36,6 +40,7 @@ class LoginView(APIView):
         return Response({'user': serialize_user(user), 'tokens': token_pair_for_user(user)})
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
     permission_classes = [AllowAny]
 
