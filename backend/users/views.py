@@ -1,7 +1,6 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from django.contrib.auth import login, logout
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -21,7 +20,6 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = register_user(**serializer.validated_data)
-        login(request, user)
         return Response(
             {'user': serialize_user(user), 'tokens': token_pair_for_user(user)},
             status=status.HTTP_201_CREATED,
@@ -36,7 +34,6 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = authenticate_user(request=request, **serializer.validated_data)
-        login(request, user)
         return Response({'user': serialize_user(user), 'tokens': token_pair_for_user(user)})
 
 
@@ -56,7 +53,6 @@ class LogoutView(APIView):
                     {'message': 'Refresh token is invalid or expired.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        logout(request)
         return Response({'message': 'Signed out.'})
 
 
