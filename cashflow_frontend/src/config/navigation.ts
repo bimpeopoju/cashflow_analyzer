@@ -7,6 +7,7 @@ import {
   FileText,
   Package,
   Activity,
+  Calculator,
   User,
   type LucideIcon,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ export const navItems: NavItem[] = [
   { label: 'Inventory', href: '/inventory', icon: Package },
   { label: 'Planning', href: '/planning', icon: Activity },
   { label: 'Reports', href: '/reports', icon: FileText },
+  { label: 'Taxes', href: '/taxes', icon: Calculator },
 ]
 
 export const mobileNavItems: NavItem[] = [

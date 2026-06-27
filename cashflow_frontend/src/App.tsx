@@ -11,6 +11,7 @@ import LandingPage from './pages/LandingPage'
 import ProfilePage from './pages/ProfilePage'
 import ReportsPage from './pages/ReportsPage'
 import SalesPage from './pages/SalesPage'
+import TaxesPage from './pages/TaxesPage'
 
 function AppShell({ children }: { children: ReactNode }) {
   return <PageWrapper>{children}</PageWrapper>
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/inventory" element={<ProtectedApp><InventoryPage /></ProtectedApp>} />
           <Route path="/planning" element={<ProtectedApp><BurnRatePage /></ProtectedApp>} />
           <Route path="/reports" element={<ProtectedApp><ReportsPage /></ProtectedApp>} />
+          <Route path="/taxes" element={<ProtectedApp><TaxesPage /></ProtectedApp>} />
           <Route path="/profile" element={<ProtectedApp><ProfilePage /></ProtectedApp>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

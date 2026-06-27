@@ -120,6 +120,44 @@ export interface TrendDay {
   cumulativeProfit: string
 }
 
+export interface TaxEstimate {
+  id: number | null
+  period: {
+    startDate: string
+    endDate: string
+  }
+  rules: {
+    vat: TaxRule | null
+    incomeTax: TaxRule | null
+  }
+  assumptions: Record<string, string>
+  result: {
+    grossSales: string
+    costOfGoodsSold: string
+    deductibleExpenses: string
+    taxableProfit: string
+    outputVat: string
+    inputVat: string
+    netVatPayable: string
+    incomeTax: string
+    totalEstimatedTax: string
+  }
+  createdAt: string | null
+}
+
+export interface TaxRule {
+  code: string
+  name: string
+  taxType: 'vat' | 'cit'
+  rate: string
+  thresholdMin: string | null
+  thresholdMax: string | null
+  effectiveFrom: string
+  effectiveTo: string | null
+  sourceUrl: string
+  notes: string
+}
+
 export interface DashboardData {
   user: User
   summary: {
@@ -327,6 +365,8 @@ export const api = {
     }),
   dashboard: () => request<DashboardData>(businessPath('/dashboard/')),
   trends: () => request<TrendData>(businessPath('/reports/trends/')),
+  taxEstimate: () => request<{ estimate: TaxEstimate }>(businessPath('/taxes/estimate/')),
+  saveTaxEstimate: () => request<{ estimate: TaxEstimate }>(businessPath('/taxes/estimate/'), { method: 'POST' }),
   sales: () => request<{ sales: Sale[] }>(businessPath('/sales/')),
   createSale: (payload: { inventoryItemId?: number | null; itemName: string; amount: string; quantity: number; note?: string }) =>
     request<{ sale: Sale }>(businessPath('/sales/'), {
