@@ -15,7 +15,9 @@ from expenses.services import create_expense
 from inventory.models import InventoryItem, StockMovement
 from inventory.selectors import inventory_for_business
 from inventory.services import create_inventory_item
+from planning.calculations import burn_rate_for_business
 from reports.calculations import dashboard_for_business
+from reports.trends import weekly_trends_for_business
 from sales.models import Sale, SaleLine
 from sales.selectors import sale_lines_for_business, sales_for_business
 from sales.serializers import validate_sale_payload
@@ -140,6 +142,49 @@ class FinanceApiTests(TestCase):
         response = self.client.get('/api/dashboard/')
 
         self.assertEqual(response.status_code, 401)
+
+    def test_business_scoped_burn_rate_endpoint(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        item = InventoryItem.objects.create(
+            business=business,
+            name='Tomatoes',
+            quantity=8,
+            unit='basket',
+            reorder_level=3,
+            unit_cost=Decimal('1000.00'),
+        )
+        StockMovement.objects.create(
+            business=business,
+            inventory_item=item,
+            movement_type=StockMovement.MOVEMENT_SALE,
+            quantity_change=-6,
+            unit_cost=item.unit_cost,
+        )
+        self.client.login(username='amina@example.com', password='secret123')
+
+        response = self.client.get(f'/api/businesses/{business.id}/planning/burn-rate/?days=3')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['summary']['trackedItems'], 1)
+        self.assertEqual(payload['items'][0]['averageDailyConsumption'], '2.00')
+        self.assertEqual(payload['items'][0]['daysUntilStockout'], 4)
+
+    def test_business_scoped_trends_endpoint(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        self.client.login(username='amina@example.com', password='secret123')
+        Sale.objects.create(business=business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=2)
+        Expense.objects.create(business=business, category='Transport', amount=Decimal('1200.00'))
+
+        response = self.client.get(f'/api/businesses/{business.id}/reports/trends/')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['summary']['sales']['current'], '5000.00')
+        self.assertEqual(payload['summary']['netProfit']['current'], '3800.00')
+        self.assertEqual(len(payload['daily']), 7)
 
     def test_capital_withdrawal_rejects_capital_erosion(self):
         user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
@@ -364,6 +409,49 @@ class FinanceServiceLayerTests(TestCase):
         entry = CashEntry.objects.get(reference_type='inventory_item', reference_id=item.id)
         self.assertEqual(entry.direction, 'outflow')
         self.assertEqual(entry.amount, Decimal('6000.00'))
+
+    def test_burn_rate_calculation_uses_stock_movements(self):
+        item = InventoryItem.objects.create(
+            business=self.business,
+            name='Tomatoes',
+            quantity=8,
+            unit='basket',
+            reorder_level=3,
+            unit_cost=Decimal('1000.00'),
+        )
+        StockMovement.objects.create(
+            business=self.business,
+            inventory_item=item,
+            movement_type=StockMovement.MOVEMENT_SALE,
+            quantity_change=-6,
+            unit_cost=item.unit_cost,
+        )
+
+        result = burn_rate_for_business(
+            inventory=inventory_for_business(self.business),
+            stock_movements=StockMovement.objects.filter(business=self.business),
+            period_days=3,
+        )
+
+        self.assertEqual(result['summary']['activeBurnItems'], 1)
+        self.assertEqual(result['summary']['totalConsumedValue'], '6000.00')
+        self.assertEqual(result['items'][0]['consumedQuantity'], 6)
+        self.assertEqual(result['items'][0]['averageDailyConsumption'], '2.00')
+        self.assertEqual(result['items'][0]['daysUntilStockout'], 4)
+
+    def test_weekly_trends_calculation_compares_growth(self):
+        Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=2)
+        Expense.objects.create(business=self.business, category='Transport', amount=Decimal('1200.00'))
+
+        result = weekly_trends_for_business(
+            sales=sales_for_business(self.business),
+            expenses=expenses_for_business(self.business),
+        )
+
+        self.assertEqual(result['summary']['sales']['current'], '5000.00')
+        self.assertEqual(result['summary']['sales']['direction'], 'new')
+        self.assertEqual(result['summary']['netProfit']['current'], '3800.00')
+        self.assertEqual(len(result['daily']), 7)
 
     def test_dashboard_calculation_uses_supplied_business_querysets(self):
         Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=3)
