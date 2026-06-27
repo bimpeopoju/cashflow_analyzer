@@ -109,3 +109,64 @@ class ForecastCalculationTests(TestCase):
         self.assertIsNotNone(result['id'])
         self.assertEqual(ForecastRun.objects.count(), 1)
         self.assertEqual(ForecastPeriod.objects.count(), 7)
+
+
+class ForecastApiTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='amina@example.com',
+            email='amina@example.com',
+            password='secret123',
+        )
+        self.business = ensure_default_business(self.user)
+        self.client.login(username='amina@example.com', password='secret123')
+
+    def add_sale(self):
+        sale = create_sale(
+            business=self.business,
+            payload={
+                'inventory_item_id': None,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('10000.00'),
+                'amount_paid': Decimal('10000.00'),
+                'payment_status': 'paid',
+                'quantity': 10,
+                'note': '',
+            },
+        )
+        SaleLine.objects.filter(sale=sale).update(unit_cost=Decimal('400.00'))
+
+    def test_forecast_preview_does_not_persist(self):
+        self.add_sale()
+
+        response = self.client.get(f'/api/businesses/{self.business.id}/forecasts/?lookbackDays=7&horizonDays=7')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['forecast']
+        self.assertIsNone(payload['id'])
+        self.assertEqual(len(payload['periods']), 7)
+        self.assertEqual(ForecastRun.objects.count(), 0)
+
+    def test_forecast_post_persists_run(self):
+        self.add_sale()
+
+        response = self.client.post(f'/api/businesses/{self.business.id}/forecasts/?lookbackDays=7&horizonDays=7')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNotNone(response.json()['forecast']['id'])
+        self.assertEqual(ForecastRun.objects.count(), 1)
+        self.assertEqual(ForecastPeriod.objects.count(), 7)
+
+    def test_forecast_requires_transactions(self):
+        response = self.client.get(f'/api/businesses/{self.business.id}/forecasts/')
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['code'], 'forecast_data_unavailable')
+
+    def test_forecast_rejects_unrelated_business(self):
+        other = User.objects.create_user(username='other@example.com', email='other@example.com', password='secret123')
+        other_business = ensure_default_business(other)
+
+        response = self.client.get(f'/api/businesses/{other_business.id}/forecasts/')
+
+        self.assertEqual(response.status_code, 404)
