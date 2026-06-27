@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'reports',
     'planning',
     'taxes',
+    'forecasting',
     'finance',
 ]
 
