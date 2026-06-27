@@ -15,7 +15,7 @@ from expenses.services import create_expense
 from inventory.models import InventoryItem, StockMovement
 from inventory.selectors import inventory_for_business
 from inventory.services import create_inventory_item
-from planning.calculations import burn_rate_for_business
+from planning.calculations import break_even_for_business, burn_rate_for_business
 from reports.calculations import dashboard_for_business
 from reports.trends import weekly_trends_for_business
 from sales.models import Sale, SaleLine
@@ -172,6 +172,34 @@ class FinanceApiTests(TestCase):
         self.assertEqual(payload['summary']['trackedItems'], 1)
         self.assertEqual(payload['items'][0]['averageDailyConsumption'], '2.00')
         self.assertEqual(payload['items'][0]['daysUntilStockout'], 4)
+
+    def test_business_scoped_break_even_endpoint(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        self.client.login(username='amina@example.com', password='secret123')
+        sale = create_sale(
+            business=business,
+            payload={
+                'inventory_item_id': None,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('10000.00'),
+                'amount_paid': Decimal('10000.00'),
+                'payment_status': 'paid',
+                'quantity': 10,
+                'note': '',
+            },
+        )
+        SaleLine.objects.filter(sale=sale).update(unit_cost=Decimal('400.00'))
+        Expense.objects.create(business=business, category='Rent', amount=Decimal('3000.00'))
+
+        response = self.client.get(f'/api/businesses/{business.id}/planning/break-even/?days=30')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['summary']['status'], 'above_break_even')
+        self.assertEqual(payload['summary']['actualRevenue'], '10000.00')
+        self.assertEqual(payload['summary']['breakEvenUnits'], 5)
+        self.assertEqual(payload['summary']['breakEvenRevenue'], '5000.00')
 
     def test_business_scoped_trends_endpoint(self):
         user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
@@ -478,6 +506,53 @@ class FinanceServiceLayerTests(TestCase):
         self.assertEqual(result['items'][0]['consumedQuantity'], 6)
         self.assertEqual(result['items'][0]['averageDailyConsumption'], '2.00')
         self.assertEqual(result['items'][0]['daysUntilStockout'], 4)
+
+    def test_break_even_calculation_identifies_viability_threshold(self):
+        sale = create_sale(
+            business=self.business,
+            payload={
+                'inventory_item_id': None,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('10000.00'),
+                'amount_paid': Decimal('10000.00'),
+                'payment_status': 'paid',
+                'quantity': 10,
+                'note': '',
+            },
+        )
+        SaleLine.objects.filter(sale=sale).update(unit_cost=Decimal('400.00'))
+        Expense.objects.create(business=self.business, category='Rent', amount=Decimal('3000.00'))
+        Expense.objects.create(
+            business=self.business,
+            category='Restock',
+            expense_type=Expense.TYPE_INVENTORY_PURCHASE,
+            amount=Decimal('5000.00'),
+        )
+
+        result = break_even_for_business(
+            sales=sales_for_business(self.business),
+            expenses=expenses_for_business(self.business),
+            sale_lines=sale_lines_for_business(self.business),
+            period_days=30,
+        )
+
+        self.assertEqual(result['summary']['status'], 'above_break_even')
+        self.assertEqual(result['summary']['fixedCosts'], '3000.00')
+        self.assertEqual(result['summary']['variableCosts'], '4000.00')
+        self.assertEqual(result['summary']['contributionMargin'], '600.00')
+        self.assertEqual(result['summary']['breakEvenUnits'], 5)
+        self.assertEqual(result['summary']['breakEvenRevenue'], '5000.00')
+
+    def test_break_even_calculation_returns_no_data_for_empty_business(self):
+        result = break_even_for_business(
+            sales=sales_for_business(self.business),
+            expenses=expenses_for_business(self.business),
+            sale_lines=sale_lines_for_business(self.business),
+            period_days=30,
+        )
+
+        self.assertEqual(result['summary']['status'], 'no_data')
+        self.assertIsNone(result['summary']['breakEvenRevenue'])
 
     def test_weekly_trends_calculation_compares_growth(self):
         Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=2)
