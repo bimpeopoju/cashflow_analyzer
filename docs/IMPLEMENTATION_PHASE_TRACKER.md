@@ -89,7 +89,7 @@ Status: In progress
 - [x] Add product burn-rate report.
 - [x] Add break-even calculator.
 - [x] Add weekly growth and trend analysis dashboard.
-- [ ] Add initial forecasting service. See `docs/FORECASTING_IMPLEMENTATION_PLAN.md`.
+- [x] Add initial forecasting service. See `docs/FORECASTING_IMPLEMENTATION_PLAN.md`.
 
 ## Phase 8: Tax Rules And Estimates
 
