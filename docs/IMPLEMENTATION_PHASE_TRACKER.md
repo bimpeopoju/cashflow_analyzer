@@ -82,13 +82,13 @@ Status: Complete
 
 ## Phase 7: Reports And Analytics
 
-Status: Not started
+Status: In progress
 
 - [ ] Add profit and loss report.
 - [ ] Add cash-flow report.
-- [ ] Add burn-rate report.
+- [x] Add product burn-rate report.
 - [ ] Add break-even calculator.
-- [ ] Add trend analysis.
+- [x] Add weekly growth and trend analysis dashboard.
 - [ ] Add initial forecasting service.
 
 ## Phase 8: Tax Rules And Estimates
