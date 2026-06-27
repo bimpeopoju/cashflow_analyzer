@@ -8,6 +8,7 @@ import {
   Package,
   Activity,
   Calculator,
+  TrendingUp,
   User,
   type LucideIcon,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ export const navItems: NavItem[] = [
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'Inventory', href: '/inventory', icon: Package },
   { label: 'Planning', href: '/planning', icon: Activity },
+  { label: 'Forecasts', href: '/forecasts', icon: TrendingUp },
   { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Taxes', href: '/taxes', icon: Calculator },
 ]

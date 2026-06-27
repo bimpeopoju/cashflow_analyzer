@@ -6,6 +6,7 @@ import AuthPage from './pages/AuthPage'
 import BurnRatePage from './pages/BurnRatePage'
 import Dashboard from './pages/Dashboard'
 import ExpensesPage from './pages/ExpensesPage'
+import ForecastsPage from './pages/ForecastsPage'
 import InventoryPage from './pages/InventoryPage'
 import LandingPage from './pages/LandingPage'
 import ProfilePage from './pages/ProfilePage'
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/expenses" element={<ProtectedApp><ExpensesPage /></ProtectedApp>} />
           <Route path="/inventory" element={<ProtectedApp><InventoryPage /></ProtectedApp>} />
           <Route path="/planning" element={<ProtectedApp><BurnRatePage /></ProtectedApp>} />
+          <Route path="/forecasts" element={<ProtectedApp><ForecastsPage /></ProtectedApp>} />
           <Route path="/reports" element={<ProtectedApp><ReportsPage /></ProtectedApp>} />
           <Route path="/taxes" element={<ProtectedApp><TaxesPage /></ProtectedApp>} />
           <Route path="/profile" element={<ProtectedApp><ProfilePage /></ProtectedApp>} />

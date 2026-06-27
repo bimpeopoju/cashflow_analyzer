@@ -181,6 +181,49 @@ export interface TaxRule {
   notes: string
 }
 
+export interface ForecastData {
+  id: number | null
+  method: string
+  lookbackDays: number
+  horizonDays: number
+  periodGranularity: 'daily'
+  confidence: 'low' | 'medium' | 'high'
+  warnings: string[]
+  assumptions: Record<string, string>
+  history: ForecastHistoryDay[]
+  periods: ForecastPeriod[]
+  summary: {
+    projectedSales: string
+    projectedExpenses: string
+    projectedGrossProfit: string
+    projectedNetProfit: string
+    projectedInventoryCost: string
+    projectedEndingCash: string
+  }
+  createdAt: string | null
+}
+
+export interface ForecastHistoryDay {
+  date: string
+  sales: string
+  expenses: string
+  grossProfit: string
+  netProfit: string
+  inventoryCost: string
+  cashNet: string
+}
+
+export interface ForecastPeriod {
+  periodStart: string
+  periodEnd: string
+  projectedSales: string
+  projectedExpenses: string
+  projectedGrossProfit: string
+  projectedNetProfit: string
+  projectedCashPosition: string
+  projectedInventoryCost: string
+}
+
 export interface DashboardData {
   user: User
   summary: {
@@ -390,6 +433,10 @@ export const api = {
   trends: () => request<TrendData>(businessPath('/reports/trends/')),
   taxEstimate: () => request<{ estimate: TaxEstimate }>(businessPath('/taxes/estimate/')),
   saveTaxEstimate: () => request<{ estimate: TaxEstimate }>(businessPath('/taxes/estimate/'), { method: 'POST' }),
+  forecast: (lookbackDays = 30, horizonDays = 14) =>
+    request<{ forecast: ForecastData }>(`${businessPath('/forecasts/')}?lookbackDays=${lookbackDays}&horizonDays=${horizonDays}`),
+  saveForecast: (lookbackDays = 30, horizonDays = 14) =>
+    request<{ forecast: ForecastData }>(`${businessPath('/forecasts/')}?lookbackDays=${lookbackDays}&horizonDays=${horizonDays}`, { method: 'POST' }),
   sales: () => request<{ sales: Sale[] }>(businessPath('/sales/')),
   createSale: (payload: { inventoryItemId?: number | null; itemName: string; amount: string; quantity: number; note?: string }) =>
     request<{ sale: Sale }>(businessPath('/sales/'), {
