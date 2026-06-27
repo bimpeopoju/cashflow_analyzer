@@ -87,7 +87,7 @@ Status: In progress
 - [ ] Add profit and loss report.
 - [ ] Add cash-flow report.
 - [x] Add product burn-rate report.
-- [ ] Add break-even calculator.
+- [x] Add break-even calculator.
 - [x] Add weekly growth and trend analysis dashboard.
 - [ ] Add initial forecasting service.
 
