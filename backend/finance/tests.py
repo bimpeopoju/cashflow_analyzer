@@ -24,6 +24,8 @@ from sales.serializers import validate_sale_payload
 from sales.services import create_sale, void_sale
 from expenses.services import void_expense
 from inventory.services import void_inventory_item
+from taxes.calculations import TaxDataUnavailable, estimate_tax_for_business
+from taxes.models import TaxEstimate, TaxRule
 
 
 User = get_user_model()
@@ -185,6 +187,44 @@ class FinanceApiTests(TestCase):
         self.assertEqual(payload['summary']['sales']['current'], '5000.00')
         self.assertEqual(payload['summary']['netProfit']['current'], '3800.00')
         self.assertEqual(len(payload['daily']), 7)
+
+    def test_tax_estimate_requires_transactions(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        self.client.login(username='amina@example.com', password='secret123')
+
+        response = self.client.get(f'/api/businesses/{business.id}/taxes/estimate/')
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['code'], 'tax_data_unavailable')
+
+    def test_business_scoped_tax_estimate_endpoint(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        self.client.login(username='amina@example.com', password='secret123')
+        sale = create_sale(
+            business=business,
+            payload={
+                'inventory_item_id': None,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('10000.00'),
+                'amount_paid': Decimal('10000.00'),
+                'payment_status': 'paid',
+                'quantity': 2,
+                'note': '',
+            },
+        )
+        SaleLine.objects.filter(sale=sale).update(unit_cost=Decimal('1000.00'))
+        Expense.objects.create(business=business, category='Transport', amount=Decimal('1200.00'))
+
+        response = self.client.get(f'/api/businesses/{business.id}/taxes/estimate/')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['estimate']
+        self.assertEqual(payload['result']['outputVat'], '750.00')
+        self.assertEqual(payload['result']['netVatPayable'], '750.00')
+        self.assertEqual(payload['result']['taxableProfit'], '6800.00')
+        self.assertEqual(payload['rules']['vat']['code'], 'NG_VAT_STANDARD_2020')
 
     def test_capital_withdrawal_rejects_capital_erosion(self):
         user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
@@ -452,6 +492,44 @@ class FinanceServiceLayerTests(TestCase):
         self.assertEqual(result['summary']['sales']['direction'], 'new')
         self.assertEqual(result['summary']['netProfit']['current'], '3800.00')
         self.assertEqual(len(result['daily']), 7)
+
+    def test_tax_estimate_calculation_persists_snapshot(self):
+        sale = create_sale(
+            business=self.business,
+            payload={
+                'inventory_item_id': None,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('10000.00'),
+                'amount_paid': Decimal('10000.00'),
+                'payment_status': 'paid',
+                'quantity': 2,
+                'note': '',
+            },
+        )
+        SaleLine.objects.filter(sale=sale).update(unit_cost=Decimal('1000.00'))
+        Expense.objects.create(business=self.business, category='Transport', amount=Decimal('1200.00'))
+
+        result = estimate_tax_for_business(
+            business=self.business,
+            sales=sales_for_business(self.business),
+            expenses=expenses_for_business(self.business),
+            sale_lines=sale_lines_for_business(self.business),
+            persist=True,
+        )
+
+        self.assertEqual(result['result']['outputVat'], '750.00')
+        self.assertEqual(result['result']['taxableProfit'], '6800.00')
+        self.assertEqual(TaxEstimate.objects.count(), 1)
+        self.assertTrue(TaxRule.objects.filter(code='NG_VAT_STANDARD_2020').exists())
+
+    def test_tax_estimate_calculation_rejects_empty_business(self):
+        with self.assertRaises(TaxDataUnavailable):
+            estimate_tax_for_business(
+                business=self.business,
+                sales=sales_for_business(self.business),
+                expenses=expenses_for_business(self.business),
+                sale_lines=sale_lines_for_business(self.business),
+            )
 
     def test_dashboard_calculation_uses_supplied_business_querysets(self):
         Sale.objects.create(business=self.business, item_name='Tomatoes', amount=Decimal('5000.00'), quantity=3)

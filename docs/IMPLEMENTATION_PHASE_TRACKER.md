@@ -93,13 +93,13 @@ Status: In progress
 
 ## Phase 8: Tax Rules And Estimates
 
-Status: Not started
+Status: In progress
 
-- [ ] Add versioned `TaxRule`.
-- [ ] Add `TaxEstimate`.
-- [ ] Replace placeholder tax set-aside logic.
-- [ ] Preserve assumptions and rule versions on estimates.
-- [ ] Label estimates clearly as estimates, not filed tax.
+- [x] Add versioned `TaxRule`.
+- [x] Add `TaxEstimate`.
+- [x] Replace placeholder tax set-aside logic with tax estimate page.
+- [x] Preserve assumptions and rule versions on estimates.
+- [x] Label estimates clearly as estimates, not filed tax.
 
 ## Phase 9: Team Access And OAuth
 
