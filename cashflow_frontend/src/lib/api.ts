@@ -58,6 +58,68 @@ export interface InventoryItem {
   stockValue: string
 }
 
+export interface BurnRateData {
+  period: {
+    days: number
+    startDate: string
+    endDate: string
+  }
+  summary: {
+    trackedItems: number
+    activeBurnItems: number
+    atRiskItems: number
+    totalConsumedValue: string
+  }
+  items: Array<{
+    itemId: number
+    name: string
+    unit: string
+    currentQuantity: number
+    reorderLevel: number
+    periodDays: number
+    consumedQuantity: number
+    averageDailyConsumption: string
+    daysUntilStockout: number | null
+    projectedStockoutDate: string | null
+    consumedValue: string
+    status: 'out' | 'at_risk' | 'stable' | 'no_data'
+  }>
+}
+
+export interface TrendMetric {
+  current: string
+  previous: string
+  change: string
+  growthRate: string | null
+  direction: 'up' | 'down' | 'flat' | 'new'
+}
+
+export interface TrendData {
+  period: {
+    currentStartDate: string
+    currentEndDate: string
+    previousStartDate: string
+    previousEndDate: string
+  }
+  summary: {
+    sales: TrendMetric
+    expenses: TrendMetric
+    netProfit: TrendMetric
+    bestSalesDay: TrendDay | null
+  }
+  daily: TrendDay[]
+}
+
+export interface TrendDay {
+  date: string
+  day: string
+  sales: string
+  expenses: string
+  netProfit: string
+  cumulativeSales: string
+  cumulativeProfit: string
+}
+
 export interface DashboardData {
   user: User
   summary: {
@@ -264,6 +326,7 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   dashboard: () => request<DashboardData>(businessPath('/dashboard/')),
+  trends: () => request<TrendData>(businessPath('/reports/trends/')),
   sales: () => request<{ sales: Sale[] }>(businessPath('/sales/')),
   createSale: (payload: { inventoryItemId?: number | null; itemName: string; amount: string; quantity: number; note?: string }) =>
     request<{ sale: Sale }>(businessPath('/sales/'), {
@@ -284,6 +347,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  burnRate: (days = 30) => request<BurnRateData>(`${businessPath('/planning/burn-rate/')}?days=${days}`),
   inventory: () => request<{ items: InventoryItem[] }>(businessPath('/inventory/')),
   createInventoryItem: (payload: {
     name: string

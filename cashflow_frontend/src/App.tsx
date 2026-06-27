@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import PageWrapper from './components/layout/PageWrapper'
 import { AuthProvider, ProtectedRoute } from './lib/auth'
 import AuthPage from './pages/AuthPage'
+import BurnRatePage from './pages/BurnRatePage'
 import Dashboard from './pages/Dashboard'
 import ExpensesPage from './pages/ExpensesPage'
 import InventoryPage from './pages/InventoryPage'
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/sales" element={<ProtectedApp><SalesPage /></ProtectedApp>} />
           <Route path="/expenses" element={<ProtectedApp><ExpensesPage /></ProtectedApp>} />
           <Route path="/inventory" element={<ProtectedApp><InventoryPage /></ProtectedApp>} />
+          <Route path="/planning" element={<ProtectedApp><BurnRatePage /></ProtectedApp>} />
           <Route path="/reports" element={<ProtectedApp><ReportsPage /></ProtectedApp>} />
           <Route path="/profile" element={<ProtectedApp><ProfilePage /></ProtectedApp>} />
           <Route path="*" element={<Navigate to="/" replace />} />
