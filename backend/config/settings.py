@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'cashflow',
     'reports',
     'planning',
+    'taxes',
     'finance',
 ]
 
