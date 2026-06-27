@@ -86,6 +86,29 @@ export interface BurnRateData {
   }>
 }
 
+export interface BreakEvenData {
+  period: {
+    days: number
+    startDate: string
+    endDate: string
+  }
+  summary: {
+    status: 'no_data' | 'unviable' | 'below_break_even' | 'above_break_even'
+    actualRevenue: string
+    actualUnitsSold: number
+    fixedCosts: string
+    variableCosts: string
+    averageSellingPrice: string
+    averageUnitVariableCost: string
+    contributionMargin: string
+    contributionMarginRatio: string
+    breakEvenUnits: number | null
+    breakEvenRevenue: string | null
+    revenueGap: string
+    unitsGap: number
+  }
+}
+
 export interface TrendMetric {
   current: string
   previous: string
@@ -402,6 +425,7 @@ export const api = {
     }),
   deleteInventoryItem: (id: number) =>
     request<{ message: string }>(businessPath(`/inventory/${id}/`), { method: 'DELETE' }),
+  breakEven: (days = 30) => request<BreakEvenData>(`${businessPath('/planning/break-even/')}?days=${days}`),
 }
 
 export function formatNaira(value: string | number) {
