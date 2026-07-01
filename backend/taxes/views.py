@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from businesses.services import get_business_for_user
@@ -32,6 +33,7 @@ def tax_rules_view(request, business_id=None):
     return JsonResponse({'rules': [rule_payload(rule) for rule in TaxRule.objects.filter(is_active=True)]})
 
 
+@csrf_exempt
 @require_http_methods(['GET', 'POST'])
 def tax_estimate_view(request, business_id=None):
     auth_response = require_user(request)

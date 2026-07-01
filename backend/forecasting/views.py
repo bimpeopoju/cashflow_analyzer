@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from businesses.services import get_business_for_user
@@ -22,6 +23,7 @@ def resolve_business_or_response(request, business_id=None):
     return business, None
 
 
+@csrf_exempt
 @require_http_methods(['GET', 'POST'])
 def forecast_view(request, business_id=None):
     auth_response = require_user(request)

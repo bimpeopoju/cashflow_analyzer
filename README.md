@@ -35,6 +35,15 @@ npm run dev
 ```
 
 Vite proxies `/api` to `http://127.0.0.1:8000` in development.
+MarketFlow uses `http://127.0.0.1:5174` for the frontend so it does not
+silently attach to another Vite app already running on the default port.
+
+Create or reset the local demo account and its sample grocery data with:
+
+```bash
+cd backend
+python manage.py seed_demo
+```
 
 ## Checks
 
