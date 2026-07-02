@@ -54,7 +54,7 @@ ALLOWED_HOSTS = os.environ.get(
 
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     'DJANGO_CSRF_TRUSTED_ORIGINS',
-    'http://localhost:5190,http://127.0.0.1:5190',
+    'http://localhost:5173,http://127.0.0.1:5173',
 ).split(',')
 
 

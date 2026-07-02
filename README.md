@@ -16,7 +16,7 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py runserver 127.0.0.1:8010
+python manage.py runserver
 ```
 
 Optional environment variables:
@@ -34,9 +34,7 @@ npm install
 npm run dev
 ```
 
-Vite proxies `/api` to `http://127.0.0.1:8010` in development.
-MarketFlow uses `http://127.0.0.1:5190` for the frontend so it does not
-silently attach to another Vite app already running on the default port.
+Vite proxies `/api` to `http://127.0.0.1:8000` in development.
 
 Create or reset the local demo account and its sample grocery data with:
 
