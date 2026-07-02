@@ -1,18 +1,25 @@
 // src/components/layout/Sidebar.tsx
 
-import { useLocation, Link } from 'react-router-dom'
+import { LoaderCircle, LogOut } from 'lucide-react'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { navItems } from '@/config/navigation'
 import { useAuth } from '@/lib/auth-context'
 
 export default function Sidebar() {
   const location = useLocation()
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { isLoggingOut, logout, user } = useAuth()
   const initials = (user?.fullName ?? 'MarketFlow')
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('') || 'M'
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/auth', { replace: true })
+  }
 
   return (
     <aside className="hidden md:flex w-64 h-screen bg-neutral-900 flex-col border-r border-white/10">
@@ -49,7 +56,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User footer */}
+      {/* User footer and logout */}
       <div className="px-3 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
           <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
@@ -60,6 +67,18 @@ export default function Sidebar() {
             <p className="text-white/30 text-xs truncate">{user?.businessName ?? 'Trader workspace'}</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-white/50 transition-colors hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-wait disabled:opacity-60"
+          aria-label="Sign out of MarketFlow"
+        >
+          {isLoggingOut
+            ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+            : <LogOut className="h-4 w-4" aria-hidden="true" />}
+          <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
+        </button>
       </div>
 
     </aside>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { type User, api } from '@/lib/api'
@@ -7,8 +7,10 @@ import { AuthContext, type AuthContextValue, useAuth } from '@/lib/auth-context'
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const logoutPromiseRef = useRef<Promise<void> | null>(null)
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const response = await api.me()
       setUser(response.user)
@@ -17,7 +19,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       return null
     }
-  }
+  }, [])
+
+  const logout = useCallback(() => {
+    if (logoutPromiseRef.current) return logoutPromiseRef.current
+
+    setIsLoggingOut(true)
+    const request = api.logout()
+      .catch(() => undefined)
+      .then(() => {
+        setUser(null)
+      })
+      .finally(() => {
+        setIsLoggingOut(false)
+        logoutPromiseRef.current = null
+      })
+
+    logoutPromiseRef.current = request
+    return request
+  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -41,10 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({
     user,
     isLoading,
+    isLoggingOut,
     isAuthenticated: Boolean(user),
     refreshUser,
-    clearUser: () => setUser(null),
-  }), [isLoading, user])
+    logout,
+  }), [isLoading, isLoggingOut, logout, refreshUser, user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LoaderCircle, LogOut } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,7 +16,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({ entryType: 'owner_deposit', amount: '', note: '' })
   const navigate = useNavigate()
-  const { clearUser } = useAuth()
+  const { isLoggingOut, logout } = useAuth()
 
   useEffect(() => {
     Promise.all([api.me(), api.dashboard()])
@@ -27,9 +28,8 @@ export default function ProfilePage() {
   }, [])
 
   const signOut = async () => {
-    await api.logout()
-    clearUser()
-    navigate('/auth')
+    await logout()
+    navigate('/auth', { replace: true })
   }
 
   const saveCapitalEntry = async (event: FormEvent<HTMLFormElement>) => {
@@ -111,7 +111,18 @@ export default function ProfilePage() {
               </div>
             </form>
           </div>
-          <Button type="button" variant="outline" onClick={signOut}>Sign Out</Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={signOut}
+            disabled={isLoggingOut}
+            className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+          >
+            {isLoggingOut
+              ? <LoaderCircle className="animate-spin" aria-hidden="true" />
+              : <LogOut aria-hidden="true" />}
+            {isLoggingOut ? 'Signing out...' : 'Sign out'}
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -4,9 +4,10 @@ import type { User } from '@/lib/api'
 export interface AuthContextValue {
   user: User | null
   isLoading: boolean
+  isLoggingOut: boolean
   isAuthenticated: boolean
   refreshUser: () => Promise<User | null>
-  clearUser: () => void
+  logout: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
