@@ -102,6 +102,19 @@ class Command(BaseCommand):
             stall_name='Shop 14, Unity Market, Lagos',
             initial_capital=Decimal('5000000.00'),
         )
+        business.tin = '20345678-0001'
+        business.entity_type = Business.ENTITY_COMPANY
+        business.vat_registered = True
+        business.accounting_year_end_month = 12
+        business.accounting_year_end_day = 31
+        business.save(update_fields=[
+            'tin',
+            'entity_type',
+            'vat_registered',
+            'accounting_year_end_month',
+            'accounting_year_end_day',
+            'updated_at',
+        ])
 
         inventory = [
             InventoryItem(

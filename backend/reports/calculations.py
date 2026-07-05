@@ -1,6 +1,7 @@
 from cashflow.calculations import capital_summary_for_business
 from businesses.services import money
 from inventory.serializers import inventory_payload
+from taxes.summary import tax_summary_for_business
 
 
 def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=None, cash_entries=None):
@@ -51,4 +52,10 @@ def dashboard_for_business(*, business, sales, expenses, inventory, sale_lines=N
         for item in recent[:6]
     ]
     dashboard['lowStock'] = low_stock
+    dashboard['taxSummary'] = tax_summary_for_business(
+        business=business,
+        sales=sales,
+        expenses=expenses,
+        sale_lines=sale_lines,
+    )
     return dashboard

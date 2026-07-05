@@ -85,6 +85,41 @@ class FinanceApiTests(TestCase):
         self.assertEqual(payload['summary']['netProfit'], '3800.00')
         self.assertIn('cashPosition', payload['summary'])
         self.assertEqual(payload['lowStock'][0]['name'], 'Pepper')
+        self.assertEqual(payload['taxSummary']['status'], 'needs_setup')
+
+    def test_dashboard_tax_summary_includes_deadlines_and_estimate(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        business.tin = '20345678-0001'
+        business.entity_type = Business.ENTITY_COMPANY
+        business.vat_registered = True
+        business.accounting_year_end_month = 12
+        business.accounting_year_end_day = 31
+        business.save()
+        self.client.login(username='amina@example.com', password='secret123')
+
+        sale = create_sale(
+            business=business,
+            payload={
+                'inventory_item_id': None,
+                'item_name': 'Tomatoes',
+                'amount': Decimal('10000.00'),
+                'amount_paid': Decimal('10000.00'),
+                'payment_status': 'paid',
+                'quantity': 2,
+                'note': '',
+            },
+        )
+        SaleLine.objects.filter(sale=sale).update(unit_cost=Decimal('1000.00'))
+        Expense.objects.create(business=business, category='Transport', amount=Decimal('1200.00'))
+
+        response = self.client.get(f'/api/businesses/{business.id}/dashboard/')
+
+        self.assertEqual(response.status_code, 200)
+        tax_summary = response.json()['taxSummary']
+        self.assertEqual(tax_summary['profile']['tin'], '20345678-0001')
+        self.assertEqual(len(tax_summary['deadlines']), 2)
+        self.assertEqual(tax_summary['estimate']['result']['outputVat'], '750.00')
 
     def test_business_scoped_dashboard_rejects_unrelated_business(self):
         User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
@@ -105,6 +140,36 @@ class FinanceApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()['businesses']), 1)
         self.assertEqual(response.json()['businesses'][0]['role'], 'owner')
+
+    def test_tax_profile_can_be_read_and_updated(self):
+        user = User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')
+        business = ensure_default_business(user)
+        self.client.login(username='amina@example.com', password='secret123')
+
+        initial_response = self.client.get(f'/api/businesses/{business.id}/tax-profile/')
+
+        self.assertEqual(initial_response.status_code, 200)
+        self.assertEqual(initial_response.json()['taxProfile']['tin'], '')
+        self.assertFalse(initial_response.json()['taxProfile']['isComplete'])
+
+        update_response = self.client.put(
+            f'/api/businesses/{business.id}/tax-profile/',
+            data=json.dumps({
+                'tin': '20345678-0001',
+                'entityType': 'company',
+                'vatRegistered': True,
+                'accountingYearEndMonth': 12,
+                'accountingYearEndDay': 31,
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(update_response.status_code, 200)
+        payload = update_response.json()['taxProfile']
+        self.assertEqual(payload['tin'], '20345678-0001')
+        self.assertEqual(payload['entityType'], 'company')
+        self.assertTrue(payload['vatRegistered'])
+        self.assertTrue(payload['isComplete'])
 
     def test_create_business(self):
         User.objects.create_user(username='amina@example.com', email='amina@example.com', password='secret123')

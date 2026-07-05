@@ -16,7 +16,55 @@ def business_payload(business, role=None):
         'stallName': business.stall_name,
         'initialCapital': money(business.initial_capital),
         'role': role,
+        'taxProfile': tax_profile_payload(business),
     }
+
+
+def tax_profile_payload(business):
+    missing_fields = []
+    if not business.tin:
+        missing_fields.append('tin')
+    if not business.entity_type:
+        missing_fields.append('entityType')
+    if business.entity_type == Business.ENTITY_COMPANY and (
+        business.accounting_year_end_month is None or business.accounting_year_end_day is None
+    ):
+        missing_fields.append('accountingYearEnd')
+
+    return {
+        'tin': business.tin,
+        'entityType': business.entity_type,
+        'vatRegistered': business.vat_registered,
+        'accountingYearEndMonth': business.accounting_year_end_month,
+        'accountingYearEndDay': business.accounting_year_end_day,
+        'isComplete': len(missing_fields) == 0,
+        'missingFields': missing_fields,
+    }
+
+
+def update_tax_profile_for_business(
+    *,
+    business,
+    tin,
+    entity_type,
+    vat_registered,
+    accounting_year_end_month,
+    accounting_year_end_day,
+):
+    business.tin = tin
+    business.entity_type = entity_type
+    business.vat_registered = vat_registered
+    business.accounting_year_end_month = accounting_year_end_month
+    business.accounting_year_end_day = accounting_year_end_day
+    business.save(update_fields=[
+        'tin',
+        'entity_type',
+        'vat_registered',
+        'accounting_year_end_month',
+        'accounting_year_end_day',
+        'updated_at',
+    ])
+    return business
 
 
 @transaction.atomic

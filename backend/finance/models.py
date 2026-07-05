@@ -17,6 +17,15 @@ class BusinessProfile(models.Model):
 
 
 class Business(models.Model):
+    ENTITY_COMPANY = 'company'
+    ENTITY_SOLE_PROPRIETOR = 'sole_proprietor'
+    ENTITY_PARTNERSHIP = 'partnership'
+    ENTITY_CHOICES = [
+        (ENTITY_COMPANY, 'Company'),
+        (ENTITY_SOLE_PROPRIETOR, 'Sole proprietor'),
+        (ENTITY_PARTNERSHIP, 'Partnership'),
+    ]
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -25,6 +34,11 @@ class Business(models.Model):
     name = models.CharField(max_length=120)
     stall_name = models.CharField(max_length=120, blank=True)
     initial_capital = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    tin = models.CharField(max_length=32, blank=True)
+    entity_type = models.CharField(max_length=24, choices=ENTITY_CHOICES, blank=True)
+    vat_registered = models.BooleanField(default=False)
+    accounting_year_end_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    accounting_year_end_day = models.PositiveSmallIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

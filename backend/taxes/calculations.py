@@ -86,7 +86,7 @@ def estimate_tax_for_business(*, business, sales, expenses, sale_lines, period_s
 
     rules = list(active_rules_for_period(period_end))
     vat_rule = select_vat_rule(rules)
-    cit_rule = select_cit_rule(rules=rules, gross_turnover=gross_sales)
+    cit_rule = select_cit_rule(rules=rules, gross_turnover=gross_sales) if business.entity_type == business.ENTITY_COMPANY else None
 
     vat_rate = vat_rule.rate if vat_rule else Decimal('0.0000')
     output_vat = (gross_sales * vat_rate).quantize(Decimal('0.01'))
@@ -96,12 +96,18 @@ def estimate_tax_for_business(*, business, sales, expenses, sale_lines, period_s
     income_tax = (taxable_profit * cit_rule.rate).quantize(Decimal('0.01')) if cit_rule else Decimal('0.00')
     total_estimated_tax = net_vat_payable + income_tax
 
+    entity_treatment = (
+        'Company income tax rules are applied by turnover band for company entities.'
+        if business.entity_type == business.ENTITY_COMPANY
+        else 'Personal income tax for sole proprietors and partnerships is not implemented yet.'
+    )
+
     assumptions = {
         'scope': 'Nigeria FIRS/NRS estimate, not a filed return.',
         'vatTreatment': 'All recorded sales are treated as standard-rated VAT-exclusive supplies until transaction tax categories are added.',
         'inputVatTreatment': 'Input VAT is currently treated as zero because expenses do not yet capture VAT claimability.',
         'incomeTaxTreatment': 'Taxable profit is estimated as sales minus COGS and non-withdrawal expenses.',
-        'entityTreatment': 'Company income tax rules are applied by turnover band; unincorporated trader PIT is not implemented yet.',
+        'entityTreatment': entity_treatment,
     }
     rule_snapshot = {
         'vat': rule_payload(vat_rule) if vat_rule else None,
