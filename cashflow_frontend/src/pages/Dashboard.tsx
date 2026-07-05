@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, DollarSign, Package, Receipt, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import TaxSummaryCard from '@/components/dashboard/TaxSummaryCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { type DashboardData, api, formatNaira, getErrorMessage } from '@/lib/api'
@@ -153,6 +154,8 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+
+          <TaxSummaryCard summary={data.taxSummary} />
 
           <Card className="border-orange-200 bg-orange-50">
             <CardHeader className="pb-3">

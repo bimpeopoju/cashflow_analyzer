@@ -19,6 +19,17 @@ export interface Business {
   stallName: string
   initialCapital: string
   role: 'owner' | 'admin' | 'staff' | 'viewer' | null
+  taxProfile: BusinessTaxProfile
+}
+
+export interface BusinessTaxProfile {
+  tin: string
+  entityType: 'company' | 'sole_proprietor' | 'partnership' | ''
+  vatRegistered: boolean
+  accountingYearEndMonth: number | null
+  accountingYearEndDay: number | null
+  isComplete: boolean
+  missingFields: string[]
 }
 
 export interface Sale {
@@ -181,6 +192,30 @@ export interface TaxRule {
   notes: string
 }
 
+export interface TaxDeadline {
+  code: string
+  label: string
+  dueDate: string
+  daysRemaining: number
+  status: 'overdue' | 'urgent' | 'upcoming' | 'normal'
+  description: string
+}
+
+export interface TaxAlert {
+  level: 'info' | 'warning' | 'critical'
+  title: string
+  message: string
+}
+
+export interface TaxSummary {
+  status: 'ready' | 'needs_setup' | 'needs_activity' | 'attention'
+  profile: BusinessTaxProfile
+  estimate: TaxEstimate | null
+  deadlines: TaxDeadline[]
+  alerts: TaxAlert[]
+  lastUpdatedAt: string
+}
+
 export interface ForecastData {
   id: number | null
   method: string
@@ -260,6 +295,7 @@ export interface DashboardData {
     name: string
     amount: string
   }
+  taxSummary: TaxSummary
   weeklyPerformance: Array<{
     day: string
     sales: string
@@ -430,6 +466,17 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   dashboard: () => request<DashboardData>(businessPath('/dashboard/')),
+  taxProfile: () => request<{ taxProfile: BusinessTaxProfile }>(businessPath('/tax-profile/')),
+  updateTaxProfile: (payload: {
+    tin: string
+    entityType: BusinessTaxProfile['entityType']
+    vatRegistered: boolean
+    accountingYearEndMonth: number | null
+    accountingYearEndDay: number | null
+  }) => request<{ taxProfile: BusinessTaxProfile }>(businessPath('/tax-profile/'), {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }),
   trends: () => request<TrendData>(businessPath('/reports/trends/')),
   taxEstimate: () => request<{ estimate: TaxEstimate }>(businessPath('/taxes/estimate/')),
   saveTaxEstimate: () => request<{ estimate: TaxEstimate }>(businessPath('/taxes/estimate/'), { method: 'POST' }),
