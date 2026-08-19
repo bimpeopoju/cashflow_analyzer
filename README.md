@@ -7,6 +7,7 @@ MarketFlow is a cash-flow tracker for Nigerian market traders. The repo contains
 - [Project knowledge base](docs/PROJECT_KNOWLEDGE_BASE.md)
 - [Backend reconstruction blueprint](docs/BACKEND_RECONSTRUCTION_BLUEPRINT.md)
 - [Authentication implementation plan](docs/AUTHENTICATION_IMPLEMENTATION_PLAN.md)
+- [Lightsail SQLite deployment guide](docs/LIGHTSAIL_SQLITE_DEPLOYMENT.md)
 
 ## Backend
 
